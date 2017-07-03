@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Title}}</title>
+    {{range .CSSPaths}}
+    <link rel="stylesheet" type="text/css" href="{{.}}"> {{end}}
+    <script src="{{.Path}}/js/jquery-3.2.1.min.js"></script>
+    <script src="{{.Path}}/js/jquery.serialize-object.min.js"></script>
+    <script src="{{.Path}}/js/ihui.js"></script>
+    {{range .JSPaths}}
+    <script src="{{.}}"></script>
+    {{end}}
+</head>
+
+<body id="ihui_pages">
+</body>
+
+</html>
