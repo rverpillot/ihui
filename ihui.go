@@ -10,13 +10,12 @@ import (
 	"strings"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/websocket"
 )
 
 type RenderFunc func(io.Writer)
 
-func (f RenderFunc) Render(w io.Writer) { f.Render(w) }
+func (f RenderFunc) Draw(w io.Writer) { f(w) }
 
 type Render interface {
 	Draw(io.Writer)
@@ -65,53 +64,53 @@ func (ctx *Context) Display(r Render, w io.Writer) {
 	r.Draw(w)
 }
 
-func (ctx *Context) DisplayPage(page *Page, modal bool) *Event {
+func (ctx *Context) DisplayPage(page *Page, modal bool) (*Event, error) {
 	var buffer bytes.Buffer
 	buffer.WriteString(fmt.Sprintf(`<div><div id="%s" style="height: 100%%">`, page.Id()))
-	ctx.Display(page, &buffer)
+	page.Draw(&buffer)
 	buffer.WriteString(`</div></div>`)
-
-	doc, err := goquery.NewDocumentFromReader(&buffer)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-
-	doc.Find("[data-action]").Each(func(i int, s *goquery.Selection) {
-		_, ok := s.Attr("id")
-		if !ok {
-			return
+	/*
+		doc, err := goquery.NewDocumentFromReader(&buffer)
+		if err != nil {
+			log.Println(err)
+			return nil
 		}
-	})
 
-	html, err := doc.Find("div").First().Html()
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
+		doc.Find("[data-action]").Each(func(i int, s *goquery.Selection) {
+			_, ok := s.Attr("id")
+			if !ok {
+				return
+			}
+		})
 
+		html, err := doc.Find("div").First().Html()
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+	*/
 	event := &Event{
 		Name:   "update",
 		Source: page.Id(),
 		Data: map[string]interface{}{
 			"title": page.Title(),
-			"html":  html,
+			"html":  buffer.String(),
 		},
 	}
 
 	if err := ctx.sendEvent(event); err != nil {
-		return nil
+		return nil, err
 	}
-	err = websocket.ReadJSON(ctx.ws, ctx.Event)
+	err := websocket.ReadJSON(ctx.ws, ctx.Event)
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, err
 	}
 
 	name := ctx.Event.Source + "." + ctx.Event.Name
 	page.Trigger(name, ctx)
 
-	return ctx.Event
+	return ctx.Event, nil
 }
 
 func (ctx *Context) Script(format string, args ...interface{}) error {
@@ -160,6 +159,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.Path = strings.TrimRight(r.URL.Path, "/")
 	}
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.Path)
+	log.Println(r.URL.Path)
 
 	if r.URL.Path == "/ws" {
 		var upgrader = websocket.Upgrader{}

@@ -106,10 +106,9 @@ $(document).ready(function () {
 
     //    ws.onerror = function(event) {}
 
-
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        // console.log(msg)
+        console.log(msg)
         var body = $(document.body)
 
         switch (msg.Name) {

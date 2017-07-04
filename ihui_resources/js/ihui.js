@@ -77,6 +77,8 @@ function updateHTML(page, html) {
             }
             return true
         },
+        childrenOnly: true,
+        
         // onNodeAdded: function(el) {
         //     if ($(el).attr("data-action")) {
         //         handleEvents(el)
@@ -106,17 +108,16 @@ $(document).ready(function () {
 
     //    ws.onerror = function(event) {}
 
-
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        // console.log(msg)
+        console.log(msg)
         var body = $(document.body)
 
         switch (msg.Name) {
             case "update":
+                document.title = msg.Data.title
                 updateHTML(body, msg.Data.html)
                 if (msg.Source != currentPage) {
-                    document.title = msg.Data.title
                     window.scrollTo(0, 0)
                     currentPage = msg.Source
                 }
