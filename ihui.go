@@ -1,10 +1,8 @@
 package ihui
 
 import (
-	"bytes"
 	"fmt"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -13,12 +11,12 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type RenderFunc func(io.Writer)
+type RenderFunc func(*Page)
 
-func (f RenderFunc) Draw(w io.Writer) { f(w) }
+func (f RenderFunc) Draw(page *Page) { f(page) }
 
 type Render interface {
-	Draw(io.Writer)
+	Draw(*Page)
 }
 
 type Event struct {
@@ -60,57 +58,14 @@ func (ctx *Context) sendEvent(event *Event) error {
 	return nil
 }
 
-func (ctx *Context) Display(r Render, w io.Writer) {
-	r.Draw(w)
-}
-
-func (ctx *Context) DisplayPage(page *Page, modal bool) (*Event, error) {
-	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf(`<div><div id="%s" style="height: 100%%">`, page.Id()))
-	page.Draw(&buffer)
-	buffer.WriteString(`</div></div>`)
-	/*
-		doc, err := goquery.NewDocumentFromReader(&buffer)
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-
-		doc.Find("[data-action]").Each(func(i int, s *goquery.Selection) {
-			_, ok := s.Attr("id")
-			if !ok {
-				return
-			}
-		})
-
-		html, err := doc.Find("div").First().Html()
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-	*/
-	event := &Event{
-		Name:   "update",
-		Source: page.Id(),
-		Data: map[string]interface{}{
-			"title": page.Title(),
-			"html":  buffer.String(),
-		},
+func (ctx *Context) NewPage(id string, title string, render Render) *Page {
+	page := &Page{
+		ctx:    ctx,
+		id:     id,
+		Render: render,
+		title:  title,
 	}
-
-	if err := ctx.sendEvent(event); err != nil {
-		return nil, err
-	}
-	err := websocket.ReadJSON(ctx.ws, ctx.Event)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	name := ctx.Event.Source + "." + ctx.Event.Name
-	page.Trigger(name, ctx)
-
-	return ctx.Event, nil
+	return page
 }
 
 func (ctx *Context) Script(format string, args ...interface{}) error {

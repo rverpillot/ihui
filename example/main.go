@@ -1,33 +1,56 @@
 package main
 
 import (
-	"io"
 	"log"
 	"net/http"
+
+	"fmt"
 
 	"rverpi/ihui.v2"
 )
 
-func page1(w io.Writer) {
-	w.Write([]byte(`<p>Hello page1</p>`))
-	w.Write([]byte(`<a id="close" href="#" data-action="click">Close!</a>`))
+type Button struct {
+	id    string
+	label string
 }
 
-func index(w io.Writer) {
-	w.Write([]byte(`<p>Hello index</p>`))
-	w.Write([]byte(`<a id="go" href="#" data-action="click">Action!</a>`))
+func newButton(id, label string) *Button {
+	return &Button{id: id, label: label}
+}
+
+func (b *Button) Draw(page *ihui.Page) {
+	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, b.id, b.label)
+	page.Write(html)
+
+	page.On(b.id+".click", func(ctx *ihui.Context) {
+		log.Println("Click button!")
+	})
+}
+
+func page1(page *ihui.Page) {
+	page.Write(`<p>Hello page1</p>`)
+	newButton("close", "Exit").Draw(page)
+
+	page.On("close.click", func(ctx *ihui.Context) {
+		log.Println("close!")
+	})
+}
+
+func index(page *ihui.Page) {
+	page.Write(`<p>Hello index</p>`)
+	newButton("go", "go page 1").Draw(page)
+
+	page.On("go.click", func(ctx *ihui.Context) {
+		log.Println(ctx.NewPage("page1", "Page 1", ihui.RenderFunc(page1)).Show(false))
+	})
+
 }
 
 func start(ctx *ihui.Context) {
-	index := ihui.NewPage("index", "Hello", ihui.RenderFunc(index))
-	page := ihui.NewPage("page1", "Page 1", ihui.RenderFunc(page1))
-
-	index.On("go.click", func(ctx *ihui.Context) {
-		log.Println(ctx.DisplayPage(page, false))
-	})
+	index := ctx.NewPage("index", "Hello", ihui.RenderFunc(index))
 
 	for {
-		ev, err := ctx.DisplayPage(index, false)
+		ev, err := index.Show(false)
 		if err != nil {
 			break
 		}
