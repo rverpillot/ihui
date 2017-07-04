@@ -14,33 +14,35 @@ type Button struct {
 	label string
 }
 
-func newButton(id, label string) *Button {
-	return &Button{id: id, label: label}
+func drawButton(page *ihui.Page, label string) string {
+	button := &Button{id: page.NewId(), label: label}
+	button.Draw(page)
+	return button.id
 }
 
 func (b *Button) Draw(page *ihui.Page) {
 	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, b.id, b.label)
 	page.WriteString(html)
 
-	page.On(b.id+".click", func(ctx *ihui.Context) {
+	page.On(b.id, "click", func(ctx *ihui.Context) {
 		log.Println("Click button!")
 	})
 }
 
 func page1(page *ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
-	newButton("close", "Exit").Draw(page)
+	buttonID := drawButton(page, "Exit")
 
-	page.On("close.click", func(ctx *ihui.Context) {
+	page.On(buttonID, "click", func(ctx *ihui.Context) {
 		log.Println("close!")
 	})
 }
 
 func index(page *ihui.Page) {
 	page.WriteString(`<p>Hello index</p>`)
-	newButton("go", "go page 1").Draw(page)
+	buttonID := drawButton(page, "go page 1")
 
-	page.On("go.click", func(ctx *ihui.Context) {
+	page.On(buttonID, "click", func(ctx *ihui.Context) {
 		log.Println(ctx.NewPage("page1", "Page 1", ihui.RenderFunc(page1)).Show(false))
 	})
 

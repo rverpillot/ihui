@@ -3,7 +3,6 @@ package ihui
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/websocket"
@@ -15,6 +14,7 @@ type Page struct {
 	buffer  bytes.Buffer
 	id      string
 	title   string
+	countId int
 	actions map[string][]ActionFunc
 }
 
@@ -38,17 +38,18 @@ func (p *Page) Write(data []byte) {
 	p.buffer.Write(data)
 }
 
-func (p *Page) On(name string, action ActionFunc) {
-	if !strings.HasPrefix(name, p.Id()) {
-		name = p.Id() + "." + name
-	}
+func (p *Page) NewId() string {
+	p.countId++
+	return fmt.Sprintf("%s.%d", p.Id(), p.countId)
+}
+
+func (p *Page) On(id string, name string, action ActionFunc) {
+	name = id + "." + name
 	p.actions[name] = append(p.actions[name], action)
 }
 
-func (p *Page) Trigger(name string, ctx *Context) {
-	if !strings.HasPrefix(name, p.Id()) {
-		name = p.Id() + "." + name
-	}
+func (p *Page) Trigger(id string, name string, ctx *Context) {
+	name = id + "." + name
 	actions := p.actions[name]
 	for _, action := range actions {
 		action(ctx)
@@ -57,6 +58,7 @@ func (p *Page) Trigger(name string, ctx *Context) {
 
 func (page *Page) Show(modal bool) (*Event, error) {
 	page.actions = make(map[string][]ActionFunc)
+	page.countId = 0
 
 	page.buffer.Reset()
 	page.buffer.WriteString(fmt.Sprintf(`<div><div id="%s" style="height: 100%%">`, page.Id()))
@@ -69,11 +71,11 @@ func (page *Page) Show(modal bool) (*Event, error) {
 	}
 
 	doc.Find("[data-action]").Each(func(i int, s *goquery.Selection) {
-		id, ok := s.Attr("id")
+		_, ok := s.Attr("id")
 		if !ok {
 			return
 		}
-		s.SetAttr("id", page.Id()+"."+id)
+		// s.SetAttr("id", page.Id()+"."+id)
 		action, _ := s.Attr("data-action")
 		switch action {
 		case "click":
@@ -122,8 +124,7 @@ func (page *Page) Show(modal bool) (*Event, error) {
 		return nil, err
 	}
 
-	name := page.ctx.Event.Source + "." + page.ctx.Event.Name
-	page.Trigger(name, page.ctx)
+	page.Trigger(page.ctx.Event.Source, page.ctx.Event.Name, page.ctx)
 
 	return page.ctx.Event, nil
 }
