@@ -20,7 +20,7 @@ func newButton(id, label string) *Button {
 
 func (b *Button) Draw(page *ihui.Page) {
 	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, b.id, b.label)
-	page.Write(html)
+	page.WriteString(html)
 
 	page.On(b.id+".click", func(ctx *ihui.Context) {
 		log.Println("Click button!")
@@ -28,7 +28,7 @@ func (b *Button) Draw(page *ihui.Page) {
 }
 
 func page1(page *ihui.Page) {
-	page.Write(`<p>Hello page1</p>`)
+	page.WriteString(`<p>Hello page1</p>`)
 	newButton("close", "Exit").Draw(page)
 
 	page.On("close.click", func(ctx *ihui.Context) {
@@ -37,7 +37,7 @@ func page1(page *ihui.Page) {
 }
 
 func index(page *ihui.Page) {
-	page.Write(`<p>Hello index</p>`)
+	page.WriteString(`<p>Hello index</p>`)
 	newButton("go", "go page 1").Draw(page)
 
 	page.On("go.click", func(ctx *ihui.Context) {

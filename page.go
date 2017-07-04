@@ -3,7 +3,6 @@ package ihui
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -31,8 +30,12 @@ func (p *Page) SetTitle(title string) {
 	p.title = title
 }
 
-func (p *Page) Write(html string) {
+func (p *Page) WriteString(html string) {
 	p.buffer.WriteString(html)
+}
+
+func (p *Page) Write(data []byte) {
+	p.buffer.Write(data)
 }
 
 func (p *Page) On(name string, action ActionFunc) {
@@ -62,8 +65,7 @@ func (page *Page) Show(modal bool) (*Event, error) {
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
 	if err != nil {
-		log.Println(err)
-		return nil, nil
+		return nil, err
 	}
 
 	doc.Find("[data-action]").Each(func(i int, s *goquery.Selection) {
@@ -98,10 +100,9 @@ func (page *Page) Show(modal bool) (*Event, error) {
 		s.RemoveAttr("data-action")
 	})
 
-	html, err := doc.Find("div").First().Html()
+	html, err := doc.Html()
 	if err != nil {
-		log.Println(err)
-		return nil, nil
+		return nil, err
 	}
 
 	event := &Event{
@@ -118,7 +119,6 @@ func (page *Page) Show(modal bool) (*Event, error) {
 	}
 	err = websocket.ReadJSON(page.ctx.ws, page.ctx.Event)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 
