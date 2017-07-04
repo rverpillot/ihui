@@ -15,12 +15,18 @@ type Button struct {
 }
 
 func drawButton(page *ihui.Page, label string) string {
-	button := &Button{id: page.NewId(), label: label}
-	button.Draw(page)
-	return button.id
+	id := page.NewId()
+	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, id, label)
+	page.WriteString(html)
+
+	page.On(id, "click", func(ctx *ihui.Context) {
+		log.Println("Click button!")
+	})
+	return id
 }
 
 func (b *Button) Draw(page *ihui.Page) {
+	b.id = page.NewId()
 	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, b.id, b.label)
 	page.WriteString(html)
 
