@@ -10,12 +10,24 @@ import (
 
 type Page struct {
 	Render
+	ws      *websocket.Conn
+	session *Session
 	ctx     *Context
 	buffer  bytes.Buffer
 	id      string
 	title   string
 	countId int
 	actions map[string][]ActionFunc
+}
+
+func NewPage(session *Session, id string, title string, render Render) *Page {
+	page := &Page{
+		session: session,
+		id:      id,
+		Render:  render,
+		title:   title,
+	}
+	return page
 }
 
 func (p *Page) Id() string {
@@ -28,6 +40,14 @@ func (p *Page) Title() string {
 
 func (p *Page) SetTitle(title string) {
 	p.title = title
+}
+
+func (p *Page) Context() *Context {
+	return p.ctx
+}
+
+func (p *Page) Add(r Render) {
+	r.Draw(p)
 }
 
 func (p *Page) WriteString(html string) {
@@ -44,6 +64,9 @@ func (p *Page) NewId() string {
 }
 
 func (p *Page) On(id string, name string, action ActionFunc) {
+	if action == nil {
+		return
+	}
 	name = id + "." + name
 	p.actions[name] = append(p.actions[name], action)
 }

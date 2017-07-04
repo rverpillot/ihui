@@ -25,18 +25,65 @@ type Event struct {
 	Data   interface{}
 }
 
+type Params map[string]interface{}
+
+type Session struct {
+	Params
+	ws   *websocket.Conn
+	page *Page
+}
+
+func newSession(ws *websocket.Conn) *Session {
+	return &Session{
+		Params: make(map[string]interface{}),
+		ws:     ws,
+	}
+}
+
+func (s *Session) Page() *Page {
+	return s.page
+}
+
+func (s *Session) sendEvent(event *Event) error {
+	// log.Println(event.Name, event.Source)
+	err := websocket.WriteJSON(s.ws, event)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func (s *Session) NewPage(id string, title string, render Render) *Page {
+	page := &Page{
+		session: s,
+		id:      id,
+		Render:  render,
+		title:   title,
+	}
+	return page
+}
+
+func (s *Session) Script(format string, args ...interface{}) error {
+	event := &Event{
+		Name:   "script",
+		Source: "",
+		Data:   fmt.Sprintf(format, args...),
+	}
+
+	return s.sendEvent(event)
+}
+
 type Context struct {
-	Session map[string]interface{}
-	params  map[string]interface{}
-	ws      *websocket.Conn
-	Event   *Event
+	params map[string]interface{}
+	ws     *websocket.Conn
+	Event  *Event
 }
 
 func newContext(ws *websocket.Conn) *Context {
 	return &Context{
-		ws:      ws,
-		params:  make(map[string]interface{}),
-		Session: make(map[string]interface{}),
+		ws:     ws,
+		params: make(map[string]interface{}),
 	}
 }
 

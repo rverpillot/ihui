@@ -10,48 +10,37 @@ import (
 )
 
 type Button struct {
-	id    string
-	label string
+	id     string
+	label  string
+	action ihui.ActionFunc
 }
 
-func drawButton(page *ihui.Page, label string) string {
-	id := page.NewId()
-	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, id, label)
-	page.WriteString(html)
-
-	page.On(id, "click", func(ctx *ihui.Context) {
-		log.Println("Click button!")
-	})
-	return id
+func newButton(label string, action ihui.ActionFunc) *Button {
+	return &Button{
+		label:  label,
+		action: action,
+	}
 }
 
 func (b *Button) Draw(page *ihui.Page) {
 	b.id = page.NewId()
 	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, b.id, b.label)
 	page.WriteString(html)
-
-	page.On(b.id, "click", func(ctx *ihui.Context) {
-		log.Println("Click button!")
-	})
+	page.On(b.id, "click", b.action)
 }
 
 func page1(page *ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
-	buttonID := drawButton(page, "Exit")
-
-	page.On(buttonID, "click", func(ctx *ihui.Context) {
+	page.Add(newButton("Exit", func(ctx *ihui.Context) {
 		log.Println("close!")
-	})
+	}))
 }
 
 func index(page *ihui.Page) {
 	page.WriteString(`<p>Hello index</p>`)
-	buttonID := drawButton(page, "go page 1")
-
-	page.On(buttonID, "click", func(ctx *ihui.Context) {
-		log.Println(ctx.NewPage("page1", "Page 1", ihui.RenderFunc(page1)).Show(false))
-	})
-
+	page.Add(newButton("go page 1", func(ctx *ihui.Context) {
+		ctx.NewPage("page1", "Page 1", ihui.RenderFunc(page1)).Show(false)
+	}))
 }
 
 func start(ctx *ihui.Context) {
