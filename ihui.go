@@ -1,7 +1,6 @@
 package ihui
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,10 +12,10 @@ import (
 
 type RenderFunc func(*Page)
 
-func (f RenderFunc) Draw(page *Page) { f(page) }
+func (f RenderFunc) Render(page *Page) { f(page) }
 
-type Render interface {
-	Draw(*Page)
+type Renderer interface {
+	Render(*Page)
 }
 
 type Event struct {
@@ -25,107 +24,9 @@ type Event struct {
 	Data   interface{}
 }
 
-type Params map[string]interface{}
+type ActionFunc func(*Session)
 
-type Session struct {
-	Params
-	ws   *websocket.Conn
-	page *Page
-}
-
-func newSession(ws *websocket.Conn) *Session {
-	return &Session{
-		Params: make(map[string]interface{}),
-		ws:     ws,
-	}
-}
-
-func (s *Session) Page() *Page {
-	return s.page
-}
-
-func (s *Session) sendEvent(event *Event) error {
-	// log.Println(event.Name, event.Source)
-	err := websocket.WriteJSON(s.ws, event)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return nil
-}
-
-func (s *Session) NewPage(id string, title string, render Render) *Page {
-	page := &Page{
-		session: s,
-		id:      id,
-		Render:  render,
-		title:   title,
-	}
-	return page
-}
-
-func (s *Session) Script(format string, args ...interface{}) error {
-	event := &Event{
-		Name:   "script",
-		Source: "",
-		Data:   fmt.Sprintf(format, args...),
-	}
-
-	return s.sendEvent(event)
-}
-
-type Context struct {
-	params map[string]interface{}
-	ws     *websocket.Conn
-	Event  *Event
-}
-
-func newContext(ws *websocket.Conn) *Context {
-	return &Context{
-		ws:     ws,
-		params: make(map[string]interface{}),
-	}
-}
-
-func (ctx *Context) Set(name string, value interface{}) {
-	ctx.params[name] = value
-}
-
-func (ctx *Context) Get(name string) interface{} {
-	return ctx.params[name]
-}
-
-func (ctx *Context) sendEvent(event *Event) error {
-	// log.Println(event.Name, event.Source)
-	err := websocket.WriteJSON(ctx.ws, event)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return nil
-}
-
-func (ctx *Context) NewPage(id string, title string, render Render) *Page {
-	page := &Page{
-		ctx:    ctx,
-		id:     id,
-		Render: render,
-		title:  title,
-	}
-	return page
-}
-
-func (ctx *Context) Script(format string, args ...interface{}) error {
-	event := &Event{
-		Name:   "script",
-		Source: "",
-		Data:   fmt.Sprintf(format, args...),
-	}
-
-	return ctx.sendEvent(event)
-}
-
-type ActionFunc func(*Context)
+// type ActionFunc func(*Context)
 
 type HTTPHandler struct {
 	Path          string
@@ -171,10 +72,9 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		context := newContext(ws)
-		context.Set("contextRoot", h.Path)
-		context.Event = &Event{Name: "init"}
-		h.startFunc(context)
+		session := newSession(ws)
+		session.Set("contextroot", h.Path)
+		h.startFunc(session)
 
 	} else {
 		if r.URL.Path == "/" {

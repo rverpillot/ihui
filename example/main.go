@@ -22,7 +22,7 @@ func newButton(label string, action ihui.ActionFunc) *Button {
 	}
 }
 
-func (b *Button) Draw(page *ihui.Page) {
+func (b *Button) Render(page *ihui.Page) {
 	b.id = page.NewId()
 	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, b.id, b.label)
 	page.WriteString(html)
@@ -31,23 +31,24 @@ func (b *Button) Draw(page *ihui.Page) {
 
 func page1(page *ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
-	page.Add(newButton("Exit", func(ctx *ihui.Context) {
+	page.Add(newButton("Exit", func(session *ihui.Session) {
 		log.Println("close!")
 	}))
 }
 
 func index(page *ihui.Page) {
 	page.WriteString(`<p>Hello index</p>`)
-	page.Add(newButton("go page 1", func(ctx *ihui.Context) {
-		ctx.NewPage("page1", "Page 1", ihui.RenderFunc(page1)).Show(false)
+	page.Add(newButton("go page 1", func(session *ihui.Session) {
+		p := ihui.NewPage(session, "Page 1", ihui.RenderFunc(page1))
+		session.ShowPage(p)
 	}))
 }
 
-func start(ctx *ihui.Context) {
-	index := ctx.NewPage("index", "Hello", ihui.RenderFunc(index))
+func start(session *ihui.Session) {
+	index := ihui.NewPage(session, "Hello", ihui.RenderFunc(index))
 
 	for {
-		ev, err := index.Show(false)
+		ev, err := session.ShowPage(index)
 		if err != nil {
 			break
 		}

@@ -9,29 +9,21 @@ import (
 )
 
 type Page struct {
-	Render
+	Renderer
 	ws      *websocket.Conn
-	session *Session
-	ctx     *Context
 	buffer  bytes.Buffer
-	id      string
 	title   string
-	countId int
+	countID int
 	actions map[string][]ActionFunc
 }
 
-func NewPage(session *Session, id string, title string, render Render) *Page {
+func NewPage(session *Session, title string, render Renderer) *Page {
 	page := &Page{
-		session: session,
-		id:      id,
-		Render:  render,
-		title:   title,
+		ws:       session.ws,
+		Renderer: render,
+		title:    title,
 	}
 	return page
-}
-
-func (p *Page) Id() string {
-	return p.id
 }
 
 func (p *Page) Title() string {
@@ -42,12 +34,8 @@ func (p *Page) SetTitle(title string) {
 	p.title = title
 }
 
-func (p *Page) Context() *Context {
-	return p.ctx
-}
-
-func (p *Page) Add(r Render) {
-	r.Draw(p)
+func (p *Page) Add(r Renderer) {
+	r.Render(p)
 }
 
 func (p *Page) WriteString(html string) {
@@ -59,8 +47,8 @@ func (p *Page) Write(data []byte) {
 }
 
 func (p *Page) NewId() string {
-	p.countId++
-	return fmt.Sprintf("%s.%d", p.Id(), p.countId)
+	p.countID++
+	return fmt.Sprintf("i%d", p.countID)
 }
 
 func (p *Page) On(id string, name string, action ActionFunc) {
@@ -71,22 +59,22 @@ func (p *Page) On(id string, name string, action ActionFunc) {
 	p.actions[name] = append(p.actions[name], action)
 }
 
-func (p *Page) Trigger(id string, name string, ctx *Context) {
+func (p *Page) Trigger(id string, name string, session *Session) {
 	name = id + "." + name
 	actions := p.actions[name]
 	for _, action := range actions {
-		action(ctx)
+		action(session)
 	}
 }
 
-func (page *Page) Show(modal bool) (*Event, error) {
+func (page *Page) show(modal bool) (*Event, error) {
 	page.actions = make(map[string][]ActionFunc)
-	page.countId = 0
+	page.countID = 0
 
 	page.buffer.Reset()
-	page.buffer.WriteString(fmt.Sprintf(`<div><div id="%s" style="height: 100%%">`, page.Id()))
-	page.Draw(page)
-	page.buffer.WriteString(`</div></div>`)
+	page.buffer.WriteString(`<div id="main">`)
+	page.Render(page)
+	page.buffer.WriteString(`</div>`)
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
 	if err != nil {
@@ -98,7 +86,7 @@ func (page *Page) Show(modal bool) (*Event, error) {
 		if !ok {
 			return
 		}
-		// s.SetAttr("id", page.Id()+"."+id)
+
 		action, _ := s.Attr("data-action")
 		switch action {
 		case "click":
@@ -132,22 +120,27 @@ func (page *Page) Show(modal bool) (*Event, error) {
 
 	event := &Event{
 		Name:   "update",
-		Source: page.Id(),
+		Source: "main",
 		Data: map[string]interface{}{
 			"title": page.Title(),
 			"html":  html,
 		},
 	}
 
-	if err := page.ctx.sendEvent(event); err != nil {
-		return nil, err
-	}
-	err = websocket.ReadJSON(page.ctx.ws, page.ctx.Event)
-	if err != nil {
+	if err := page.sendEvent(event); err != nil {
 		return nil, err
 	}
 
-	page.Trigger(page.ctx.Event.Source, page.ctx.Event.Name, page.ctx)
+	if err := websocket.ReadJSON(page.ws, event); err != nil {
+		return nil, err
+	}
 
-	return page.ctx.Event, nil
+	return event, nil
+}
+
+func (page *Page) sendEvent(event *Event) error {
+	if err := websocket.WriteJSON(page.ws, event); err != nil {
+		return err
+	}
+	return nil
 }
