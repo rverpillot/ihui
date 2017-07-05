@@ -8,6 +8,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type RenderFunc func(*Page)
+
+func (f RenderFunc) Render(page *Page) { f(page) }
+
+type Renderer interface {
+	Render(*Page)
+}
+
 type Page struct {
 	Renderer
 	ws      *websocket.Conn

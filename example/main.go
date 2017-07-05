@@ -44,11 +44,21 @@ func index(page *ihui.Page) {
 	}))
 }
 
+func index2(page *ihui.Page) {
+	page.WriteString(`<p>Hello index 2</p>`)
+	page.Add(newButton("go page 1", func(session *ihui.Session) {
+		p := ihui.NewPage(session, "Page 1", ihui.RenderFunc(page1))
+		session.ShowPage(p)
+	}))
+}
+
 func start(session *ihui.Session) {
-	index := ihui.NewPage(session, "Hello", ihui.RenderFunc(index))
+	menu := NewMenu()
+	menu.Add("Page1", ihui.RenderFunc(index))
+	menu.Add("Page2", ihui.RenderFunc(index2))
 
 	for {
-		ev, err := session.ShowPage(index)
+		ev, err := session.ShowPage(ihui.NewPage(session, "Example", menu))
 		if err != nil {
 			break
 		}
