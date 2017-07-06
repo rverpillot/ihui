@@ -2,7 +2,6 @@ package ihui
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gorilla/websocket"
 )
@@ -34,7 +33,6 @@ func (s *Session) Page() *Page {
 
 func (s *Session) ShowPage(page *Page) (*Event, error) {
 	s.page = page
-	log.Println(page.Title())
 	event, err := page.show(false)
 	if err != nil {
 		return nil, err
