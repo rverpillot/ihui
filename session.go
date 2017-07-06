@@ -2,7 +2,6 @@ package ihui
 
 import (
 	"fmt"
-
 	"log"
 
 	"github.com/gorilla/websocket"
