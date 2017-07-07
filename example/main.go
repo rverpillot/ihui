@@ -68,9 +68,10 @@ func start(session *ihui.Session) {
 
 func main() {
 
-	h := ihui.NewHTTPHandler("Sample", start)
+	h := ihui.NewHTTPHandler("/app", start)
 
-	http.Handle("/app/", h)
+	log.Println(h.Pattern())
+	http.Handle(h.Pattern(), h)
 
 	log.Fatal(http.ListenAndServe("localhost:9090", nil))
 }

@@ -4,7 +4,10 @@ morphdom = require('morphdom')
 
 var ws
 
-global.sendMsg = function (name, source, data) {
+global.sendMsg = function (event, name, source, data) {
+    if (event) {
+        event.preventDefault()
+    }
     var msg = JSON.stringify({ name: name, source: source, data: data })
     ws.send(msg)
 }

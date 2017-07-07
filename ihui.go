@@ -21,24 +21,30 @@ type ActionFunc func(*Session)
 // type ActionFunc func(*Context)
 
 type HTTPHandler struct {
-	Path          string
-	CSSPaths      []string
-	JSPaths       []string
-	Title         string
-	box           *rice.Box
-	assetHandler  http.Handler
-	assetHandler2 http.Handler
-	startFunc     ActionFunc
+	ContextRoot  string
+	CSSPaths     []string
+	JSPaths      []string
+	box          *rice.Box
+	assetHandler http.Handler
+	startFunc    ActionFunc
 }
 
-func NewHTTPHandler(title string, startFunc ActionFunc) *HTTPHandler {
+func NewHTTPHandler(contextroot string, startFunc ActionFunc) *HTTPHandler {
+	if strings.HasSuffix(contextroot, "/") {
+		contextroot = contextroot[:len(contextroot)-1]
+	}
+
 	box := rice.MustFindBox("ihui_resources")
 	return &HTTPHandler{
-		Title:        title,
+		ContextRoot:  contextroot,
 		box:          box,
 		assetHandler: http.FileServer(box.HTTPBox()),
 		startFunc:    startFunc,
 	}
+}
+
+func (h *HTTPHandler) Pattern() string {
+	return h.ContextRoot + "/"
 }
 
 func (h *HTTPHandler) AddCss(path string) {
@@ -50,10 +56,7 @@ func (h *HTTPHandler) AddJs(path string) {
 }
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if h.Path == "" {
-		h.Path = strings.TrimRight(r.URL.Path, "/")
-	}
-	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.Path)
+	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.ContextRoot)
 	log.Println(r.URL.Path)
 
 	if r.URL.Path == "/ws" {
@@ -65,7 +68,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		session := newSession(ws)
-		session.Set("contextroot", h.Path)
+		session.Set("contextroot", h.ContextRoot)
 		h.startFunc(session)
 
 	} else {
