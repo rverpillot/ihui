@@ -2,6 +2,7 @@ vendor/**
 rice-box.go
 !vendor/manifest
 node_modules/**
+bin/
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

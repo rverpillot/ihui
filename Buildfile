@@ -1,1 +1,1 @@
-go build -x -o bin/main example/main.go
+make: ./build.sh
