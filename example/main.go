@@ -79,5 +79,5 @@ func main() {
 		port = "9090"
 	}
 
-	log.Fatal(http.ListenAndServe("localhost:"+port, nil))
+	log.Fatal(http.ListenAndServe("*:"+port, nil))
 }
