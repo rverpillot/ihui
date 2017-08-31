@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"fmt"
 
@@ -73,5 +74,10 @@ func main() {
 	log.Println(h.Pattern())
 	http.Handle(h.Pattern(), h)
 
-	log.Fatal(http.ListenAndServe("localhost:9090", nil))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "9090"
+	}
+
+	log.Fatal(http.ListenAndServe("localhost:"+port, nil))
 }
