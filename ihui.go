@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"strings"
 
-	rice "github.com/GeertJohan/go.rice"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/websocket"
 )
+
+//go:generate go-bindata-assetfs -pkg ihui -prefix ihui_resources/ ihui_resources/...
 
 type Event struct {
 	Name   string
@@ -18,27 +20,20 @@ type Event struct {
 
 type ActionFunc func(*Session)
 
-// type ActionFunc func(*Context)
-
 type HTTPHandler struct {
 	ContextRoot  string
 	CSSPaths     []string
 	JSPaths      []string
-	box          *rice.Box
 	assetHandler http.Handler
 	startFunc    ActionFunc
 }
 
 func NewHTTPHandler(contextroot string, startFunc ActionFunc) *HTTPHandler {
-	if strings.HasSuffix(contextroot, "/") {
-		contextroot = contextroot[:len(contextroot)-1]
-	}
+	contextroot = strings.TrimSuffix(contextroot, "/")
 
-	box := rice.MustFindBox("ihui_resources")
 	return &HTTPHandler{
 		ContextRoot:  contextroot,
-		box:          box,
-		assetHandler: http.FileServer(box.HTTPBox()),
+		assetHandler: http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/"}),
 		startFunc:    startFunc,
 	}
 }
@@ -73,7 +68,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		if r.URL.Path == "/" {
-			t, err := template.New("main").Parse(h.box.MustString("index.html"))
+			t, err := template.New("main").Parse(string(MustAsset("index.html")))
 			if err != nil {
 				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
