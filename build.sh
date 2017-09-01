@@ -5,6 +5,5 @@ go get github.com/jteeuwen/go-bindata/...
 go get github.com/elazarl/go-bindata-assetfs/...
 go get github.com/PuerkitoBio/goquery
 go get github.com/gorilla/websocket
-#(cd src/rverpi/ihui.v2 && go generate)
-go generate
+(cd src/rverpi/ihui.v2 && go generate)
 go build -x -o bin/example src/rverpi/ihui.v2/example/main.go src/rverpi/ihui.v2/example/menu.go
