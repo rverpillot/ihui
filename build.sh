@@ -4,5 +4,5 @@ go get github.com/GeertJohan/go.rice
 go get github.com/GeertJohan/go.rice/rice
 go get github.com/PuerkitoBio/goquery
 go get github.com/gorilla/websocket
-(cd src/rverpi/ihui.v2 && $GOPATH/bin/rice -v embed-go)
 go build -a -x -o bin/example src/rverpi/ihui.v2/example/main.go src/rverpi/ihui.v2/example/menu.go
+(cd src/rverpi/ihui.v2 && $GOPATH/bin/rice -v append --exec bin/example)
