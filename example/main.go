@@ -10,6 +10,7 @@ import (
 	"rverpi/ihui.v2"
 )
 
+// Button
 type Button struct {
 	id     string
 	label  string
@@ -30,6 +31,7 @@ func (b *Button) Render(page *ihui.Page) {
 	page.On(b.id, "click", b.action)
 }
 
+// Pages
 func page1(page *ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
 	page.Add(newButton("Exit", func(session *ihui.Session) {
@@ -40,7 +42,7 @@ func page1(page *ihui.Page) {
 func index(page *ihui.Page) {
 	page.WriteString(`<p>Hello index</p>`)
 	page.Add(newButton("go page 1", func(session *ihui.Session) {
-		p := ihui.NewPage(session, "Page 1", ihui.RenderFunc(page1))
+		p := session.NewPage("Page 1", ihui.RenderFunc(page1))
 		session.ShowPage(p)
 	}))
 }
@@ -48,18 +50,20 @@ func index(page *ihui.Page) {
 func index2(page *ihui.Page) {
 	page.WriteString(`<p>Hello index 2</p>`)
 	page.Add(newButton("go page 1", func(session *ihui.Session) {
-		p := ihui.NewPage(session, "Page 1", ihui.RenderFunc(page1))
+		p := session.NewPage("Page 1", ihui.RenderFunc(page1))
 		session.ShowPage(p)
 	}))
 }
 
+// Init
 func start(session *ihui.Session) {
 	menu := NewMenu()
 	menu.Add("Page1", ihui.RenderFunc(index))
 	menu.Add("Page2", ihui.RenderFunc(index2))
 
+	page := session.NewPage("Example", menu)
 	for {
-		ev, err := session.ShowPage(ihui.NewPage(session, "Example", menu))
+		ev, err := session.ShowPage(page)
 		if err != nil {
 			break
 		}

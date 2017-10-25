@@ -11,7 +11,7 @@ lib: *.go bindata_assetfs.go
 	go install -v
 
 bin/example: example/*.go *.go
-	go build -o $@ $?
+	go build -o $@ example/main.go example/menu.go
 
 deps:
 	govend -sv

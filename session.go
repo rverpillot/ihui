@@ -31,6 +31,15 @@ func (s *Session) Page() *Page {
 	return s.page
 }
 
+func (s *Session) NewPage(title string, render Renderer) *Page {
+	page := &Page{
+		ws:       s.ws,
+		Renderer: render,
+		title:    title,
+	}
+	return page
+}
+
 func (s *Session) ShowPage(page *Page) (*Event, error) {
 	s.page = page
 	event, err := page.show(false)

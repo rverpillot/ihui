@@ -25,14 +25,10 @@ type Page struct {
 	actions map[string][]ActionFunc
 }
 
-func NewPage(session *Session, title string, render Renderer) *Page {
-	page := &Page{
-		ws:       session.ws,
-		Renderer: render,
-		title:    title,
-	}
-	return page
-}
+// deprecated
+// func NewPage(session *Session, title string, render Renderer) *Page {
+// 	return session.NewPage(title, render)
+// }
 
 func (p *Page) Title() string {
 	return p.title
