@@ -38,6 +38,7 @@ function updateHTML(page, html) {
 
 var currentPage = null
 
+
 $(document).ready(function () {
     var protocol = "ws://"
     if (window.location.protocol == "https:") {
@@ -46,7 +47,10 @@ $(document).ready(function () {
     addr = protocol + window.location.host + window.location.pathname + "ws"
     ws = new WebSocket(addr);
 
-    //    ws.onerror = function(event) {}
+
+    // ws.onerror = function(event) {
+    //     console.log(event)
+    // }
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
@@ -72,7 +76,7 @@ $(document).ready(function () {
     }
 
     ws.onclose = function (event) {
-        alert("Connection closed.")
+        console.log("Connection closed.")
         location.reload()
     }
 

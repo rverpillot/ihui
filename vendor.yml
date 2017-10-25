@@ -1,11 +1,11 @@
 vendors:
 - path: github.com/PuerkitoBio/goquery
-  rev: ce645ea5e67a713599b7415f21f0786451fa9554
+  rev: 1a71cc719d0d5b9e4f14ae072bef08b576b0bab5
 - path: github.com/andybalholm/cascadia
   rev: 349dd0209470eabd9514242c688c403c0926d266
 - path: github.com/elazarl/go-bindata-assetfs
   rev: 30f82fa23fd844bd5bb1e5f216db87fd77b5eb43
 - path: github.com/gorilla/websocket
-  rev: 4201258b820c74ac8e6922fc9e6b52f71fe46f8d
+  rev: 71fa72d4842364bc5f74185f4161e0099ea3624a
 - path: golang.org/x/net
-  rev: 0a9397675ba34b2845f758fe3cd68828369c6517
+  rev: 4b14673ba32bee7f5ac0f990a48f033919fd418b
