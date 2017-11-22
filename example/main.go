@@ -25,7 +25,7 @@ func newButton(label string, action ihui.ActionFunc) *Button {
 
 func (b *Button) Render(page *ihui.Page) {
 	b.id = page.NewId()
-	html := fmt.Sprintf(`<button id="%s" data-action="click">%s</button>`, b.id, b.label)
+	html := fmt.Sprintf(`<button id="%s">%s</button>`, b.id, b.label)
 	page.WriteString(html)
 	page.On(b.id, "click", b.action)
 }

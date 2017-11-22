@@ -3,6 +3,7 @@ package ihui
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/websocket"
@@ -85,36 +86,41 @@ func (page *Page) show(modal bool) (*Event, error) {
 		return nil, err
 	}
 
-	doc.Find("[data-action]").Each(func(i int, s *goquery.Selection) {
-		_, ok := s.Attr("id")
-		if !ok {
-			return
+	doc.Find("[id]").Each(func(i int, s *goquery.Selection) {
+		id, _ := s.Attr("id")
+
+		for name := range page.actions {
+			if strings.HasPrefix(name, id+".") {
+				action := strings.Split(name, ".")[1]
+
+				switch action {
+				case "click":
+					s.SetAttr("onclick", `sendMsg(event, "click", $(this).attr("id"), null)`)
+					if goquery.NodeName(s) == "a" {
+						s.SetAttr("href", "")
+					}
+
+				case "check":
+					s.SetAttr("onchange", `sendMsg(event, "check", $(this).attr("id"), $(this).prop("checked"))`)
+
+				case "change":
+					s.SetAttr("onchange", `sendMsg(event, "change", $(this).attr("id"), $(this).val())`)
+
+				case "input":
+					s.SetAttr("oninput", `sendMsg(event, "change", $(this).attr("id"), $(this).val())`)
+
+				case "submit":
+					s.SetAttr("onsubmit", `sendMsg(event, "form", $(this).attr("id"), $(this).serializeObject())`)
+
+				case "form":
+					s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
+						ss.SetAttr("onchange", `sendMsg(event, "change", $(this).attr("id"), { name: $(this).attr("name"), val: $(this).val() })`)
+					})
+				}
+			}
+
 		}
 
-		action, _ := s.Attr("data-action")
-		switch action {
-		case "click":
-			s.SetAttr("onclick", `sendMsg(event, "click", $(this).attr("id"), null)`)
-
-		case "check":
-			s.SetAttr("onchange", `sendMsg(event, "check", $(this).attr("id"), $(this).prop("checked"))`)
-
-		case "change":
-			s.SetAttr("onchange", `sendMsg(event, "change", $(this).attr("id"), $(this).val())`)
-
-		case "input":
-			s.SetAttr("oninput", `sendMsg(event, "change", $(this).attr("id"), $(this).val())`)
-
-		case "submit":
-			s.SetAttr("onsubmit", `sendMsg(event, "form", $(this).attr("id"), $(this).serializeObject())`)
-
-		case "form":
-			s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-				ss.SetAttr("onchange", `sendMsg(event, "change", $(this).attr("id"), { name: $(this).attr("name"), val: $(this).val() })`)
-			})
-		}
-
-		s.RemoveAttr("data-action")
 	})
 
 	html, err := doc.Html()

@@ -38,7 +38,7 @@ func (menu *Menu) Render(page *ihui.Page) {
 			continue
 		}
 		id := page.NewId()
-		page.WriteString(fmt.Sprintf(`<div><a id="%s" href="" data-action="click">%s</a></div>`, id, name))
+		page.WriteString(fmt.Sprintf(`<div><a id="%s">%s</a></div>`, id, name))
 		active := name
 		page.On(id, "click", func(session *ihui.Session) {
 			menu.SetActive(active)
