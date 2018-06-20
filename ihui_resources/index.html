@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     {{range .CSSPaths}}
     <link rel="stylesheet" type="text/css" href="{{.}}"> {{end}}
-    <script src="{{.ContextRoot}}/js/jquery-3.2.1.min.js"></script>
-    <script src="{{.ContextRoot}}/js/jquery.serialize-object.min.js"></script>
-    <script src="{{.ContextRoot}}/js/ihui.js"></script>
+    <script src="{{.Path}}/js/jquery-3.2.1.min.js"></script>
+    <script src="{{.Path}}/js/jquery.serialize-object.min.js"></script>
+    <script src="{{.Path}}/js/ihui.js"></script>
     {{range .JSPaths}}
     <script src="{{.}}"></script>
     {{end}}
 </head>
 
 <body style="height:100%">
-    <div id="main" style="height:100%"></div>
+    <div id="ihui_main" style="height:100%"></div>
 </body>
 
 </html>

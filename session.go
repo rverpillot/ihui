@@ -54,6 +54,14 @@ func (s *Session) ShowPage(page *Page) (*Event, error) {
 	return event, nil
 }
 
+func (s *Session) ShowNewPage(title string, render Renderer) (*Event, error) {
+	return s.ShowPage(s.NewPage(title, render))
+}
+
+func (s *Session) ShowNewPageFunc(title string, fct RenderFunc) (*Event, error) {
+	return s.ShowPage(s.NewPageFunc(title, fct))
+}
+
 func (s *Session) Script(format string, args ...interface{}) error {
 	event := &Event{
 		Name:   "script",

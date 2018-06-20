@@ -39,26 +39,21 @@ func page1(page *ihui.Page) {
 }
 
 func index(page *ihui.Page) {
-	page.WriteString(`<p>Hello index</p>`)
-	page.Draw(newButton("go page 1", func(session *ihui.Session) {
-		p := session.NewPageFunc("Page 1", page1)
-		session.ShowPage(p)
-	}))
+	page.WriteString(`<p>Hello Tab 1</p>`)
 }
 
 func index2(page *ihui.Page) {
-	page.WriteString(`<p>Hello index 2</p>`)
+	page.WriteString(`<p>Hello Tab 2</p>`)
 	page.Draw(newButton("go page 1", func(session *ihui.Session) {
-		p := session.NewPageFunc("Page 1", page1)
-		session.ShowPage(p)
+		session.ShowNewPageFunc("Page 1", page1)
 	}))
 }
 
 // Init
 func start(session *ihui.Session) {
 	menu := NewMenu()
-	menu.Add("Page1", ihui.RenderFunc(index))
-	menu.Add("Page2", ihui.RenderFunc(index2))
+	menu.Add("Tab1", ihui.RenderFunc(index))
+	menu.Add("Tab2", ihui.RenderFunc(index2))
 
 	page := session.NewPage("Example", menu)
 	for {
@@ -66,7 +61,7 @@ func start(session *ihui.Session) {
 		if err != nil {
 			break
 		}
-		log.Println(ev)
+		log.Println("event:", ev)
 	}
 }
 
@@ -74,8 +69,7 @@ func main() {
 
 	h := ihui.NewHTTPHandler("/app", start)
 
-	log.Println(h.Pattern())
-	http.Handle(h.Pattern(), h)
+	http.Handle(h.Path()+"/", h)
 
 	port := os.Getenv("PORT")
 	if port == "" {

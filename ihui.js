@@ -60,7 +60,7 @@ $(document).ready(function () {
         switch (msg.Name) {
             case "update":
                 document.title = msg.Data.title
-                updateHTML($("#main"), msg.Data.html)
+                updateHTML($("#ihui_main"), msg.Data.html)
                 if (msg.Source != currentPage) {
                     window.scrollTo(0, 0)
                     currentPage = msg.Source

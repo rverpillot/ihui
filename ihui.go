@@ -21,7 +21,7 @@ type Event struct {
 type ActionFunc func(*Session)
 
 type HTTPHandler struct {
-	ContextRoot  string
+	contextRoot  string
 	CSSPaths     []string
 	JSPaths      []string
 	assetHandler http.Handler
@@ -32,14 +32,14 @@ func NewHTTPHandler(contextroot string, startFunc ActionFunc) *HTTPHandler {
 	contextroot = strings.TrimSuffix(contextroot, "/")
 
 	return &HTTPHandler{
-		ContextRoot:  contextroot,
+		contextRoot:  contextroot,
 		assetHandler: http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/"}),
 		startFunc:    startFunc,
 	}
 }
 
-func (h *HTTPHandler) Pattern() string {
-	return h.ContextRoot + "/"
+func (h *HTTPHandler) Path() string {
+	return h.contextRoot
 }
 
 func (h *HTTPHandler) AddCss(path string) {
@@ -51,7 +51,7 @@ func (h *HTTPHandler) AddJs(path string) {
 }
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.ContextRoot)
+	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.contextRoot)
 	log.Println(r.URL.Path)
 
 	if r.URL.Path == "/ws" {
@@ -63,7 +63,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		session := newSession(ws)
-		session.Set("contextroot", h.ContextRoot)
+		session.Set("contextroot", h.contextRoot)
 		h.startFunc(session)
 
 	} else {
