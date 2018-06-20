@@ -31,35 +31,32 @@ func (s *Session) Page() *Page {
 	return s.page
 }
 
-func (s *Session) NewPage(title string, render Renderer) *Page {
-	page := &Page{
-		ws:       s.ws,
-		Renderer: render,
-		title:    title,
-	}
-	return page
-}
-
-func (s *Session) NewPageFunc(title string, fct RenderFunc) *Page {
-	return s.NewPage(title, RenderFunc(fct))
-}
-
 func (s *Session) ShowPage(page *Page) (*Event, error) {
 	s.page = page
-	event, err := page.show(false)
+	html, err := s.page.Html()
 	if err != nil {
 		return nil, err
 	}
+
+	event := &Event{
+		Name:   "update",
+		Source: "ihui_main",
+		Data: map[string]interface{}{
+			"title": s.page.Title(),
+			"html":  html,
+		},
+	}
+	err = s.sendEvent(event)
+	if err != nil {
+		return nil, err
+	}
+	event, err = s.recvEvent()
+	if err != nil {
+		return nil, err
+	}
+
 	page.Trigger(event.Source, event.Name, s)
 	return event, nil
-}
-
-func (s *Session) ShowNewPage(title string, render Renderer) (*Event, error) {
-	return s.ShowPage(s.NewPage(title, render))
-}
-
-func (s *Session) ShowNewPageFunc(title string, fct RenderFunc) (*Event, error) {
-	return s.ShowPage(s.NewPageFunc(title, fct))
 }
 
 func (s *Session) Script(format string, args ...interface{}) error {
@@ -69,5 +66,20 @@ func (s *Session) Script(format string, args ...interface{}) error {
 		Data:   fmt.Sprintf(format, args...),
 	}
 
-	return s.page.sendEvent(event)
+	return s.sendEvent(event)
+}
+
+func (s *Session) sendEvent(event *Event) error {
+	if err := websocket.WriteJSON(s.ws, event); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Session) recvEvent() (*Event, error) {
+	var event Event
+	if err := websocket.ReadJSON(s.ws, &event); err != nil {
+		return nil, err
+	}
+	return &event, nil
 }

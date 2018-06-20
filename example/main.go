@@ -23,7 +23,7 @@ func newButton(label string, action ihui.ActionFunc) *Button {
 	}
 }
 
-func (b *Button) Render(page *ihui.Page) {
+func (b *Button) Draw(page *ihui.Page) {
 	b.id = page.NewId()
 	html := fmt.Sprintf(`<button id="%s">%s</button>`, b.id, b.label)
 	page.WriteString(html)
@@ -33,7 +33,7 @@ func (b *Button) Render(page *ihui.Page) {
 // Pages
 func page1(page *ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
-	page.Draw(newButton("Exit", func(session *ihui.Session) {
+	page.Render(newButton("Exit", func(session *ihui.Session) {
 		log.Println("close!")
 	}))
 }
@@ -44,18 +44,18 @@ func index(page *ihui.Page) {
 
 func index2(page *ihui.Page) {
 	page.WriteString(`<p>Hello Tab 2</p>`)
-	page.Draw(newButton("go page 1", func(session *ihui.Session) {
-		session.ShowNewPageFunc("Page 1", page1)
+	page.Render(newButton("go page 1", func(session *ihui.Session) {
+		session.ShowPage(ihui.NewPageFunc("Page 1", page1))
 	}))
 }
 
 // Init
 func start(session *ihui.Session) {
 	menu := NewMenu()
-	menu.Add("Tab1", ihui.RenderFunc(index))
-	menu.Add("Tab2", ihui.RenderFunc(index2))
+	menu.Add("Tab1", ihui.PageDrawerFunc(index))
+	menu.Add("Tab2", ihui.PageDrawerFunc(index2))
 
-	page := session.NewPage("Example", menu)
+	page := ihui.NewPage("Example", menu)
 	for {
 		ev, err := session.ShowPage(page)
 		if err != nil {

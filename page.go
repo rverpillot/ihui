@@ -6,24 +6,34 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gorilla/websocket"
 )
 
-type RenderFunc func(*Page)
+type PageDrawerFunc func(*Page)
 
-func (f RenderFunc) Render(page *Page) { f(page) }
+func (f PageDrawerFunc) Draw(page *Page) { f(page) }
 
-type Renderer interface {
-	Render(*Page)
+type PageDrawer interface {
+	Draw(*Page)
 }
 
 type Page struct {
-	Renderer
-	ws      *websocket.Conn
+	PageDrawer
 	buffer  bytes.Buffer
 	title   string
 	countID int
 	actions map[string][]ActionFunc
+}
+
+func NewPage(title string, render PageDrawer) *Page {
+	page := &Page{
+		PageDrawer: render,
+		title:      title,
+	}
+	return page
+}
+
+func NewPageFunc(title string, fct PageDrawerFunc) *Page {
+	return NewPage(title, PageDrawerFunc(fct))
 }
 
 func (p *Page) Title() string {
@@ -34,8 +44,8 @@ func (p *Page) SetTitle(title string) {
 	p.title = title
 }
 
-func (p *Page) Draw(r Renderer) {
-	r.Render(p)
+func (p *Page) Render(r PageDrawer) {
+	r.Draw(p)
 }
 
 func (p *Page) WriteString(html string) {
@@ -67,18 +77,18 @@ func (p *Page) Trigger(id string, name string, session *Session) {
 	}
 }
 
-func (page *Page) show(modal bool) (*Event, error) {
+func (page *Page) Html() (string, error) {
 	page.actions = make(map[string][]ActionFunc)
 	page.countID = 0
 
 	page.buffer.Reset()
-	page.buffer.WriteString(`<div id="main">`)
-	page.Render(page)
+	page.buffer.WriteString(`<div id="ihui_main">`)
+	page.Draw(page)
 	page.buffer.WriteString(`</div>`)
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	doc.Find("[id]").Each(func(i int, s *goquery.Selection) {
@@ -118,34 +128,5 @@ func (page *Page) show(modal bool) (*Event, error) {
 
 	})
 
-	html, err := doc.Html()
-	if err != nil {
-		return nil, err
-	}
-
-	event := &Event{
-		Name:   "update",
-		Source: "main",
-		Data: map[string]interface{}{
-			"title": page.Title(),
-			"html":  html,
-		},
-	}
-
-	if err := page.sendEvent(event); err != nil {
-		return nil, err
-	}
-
-	if err := websocket.ReadJSON(page.ws, event); err != nil {
-		return nil, err
-	}
-
-	return event, nil
-}
-
-func (page *Page) sendEvent(event *Event) error {
-	if err := websocket.WriteJSON(page.ws, event); err != nil {
-		return err
-	}
-	return nil
+	return doc.Html()
 }
