@@ -2,6 +2,7 @@ vendor
 rice-box.go
 node_modules/**
 bin/
+bindata*.go
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
