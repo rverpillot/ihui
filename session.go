@@ -40,6 +40,10 @@ func (s *Session) NewPage(title string, render Renderer) *Page {
 	return page
 }
 
+func (s *Session) NewPageFunc(title string, fct RenderFunc) *Page {
+	return s.NewPage(title, RenderFunc(fct))
+}
+
 func (s *Session) ShowPage(page *Page) (*Event, error) {
 	s.page = page
 	event, err := page.show(false)

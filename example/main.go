@@ -33,23 +33,23 @@ func (b *Button) Render(page *ihui.Page) {
 // Pages
 func page1(page *ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
-	page.Add(newButton("Exit", func(session *ihui.Session) {
+	page.Draw(newButton("Exit", func(session *ihui.Session) {
 		log.Println("close!")
 	}))
 }
 
 func index(page *ihui.Page) {
 	page.WriteString(`<p>Hello index</p>`)
-	page.Add(newButton("go page 1", func(session *ihui.Session) {
-		p := session.NewPage("Page 1", ihui.RenderFunc(page1))
+	page.Draw(newButton("go page 1", func(session *ihui.Session) {
+		p := session.NewPageFunc("Page 1", page1)
 		session.ShowPage(p)
 	}))
 }
 
 func index2(page *ihui.Page) {
 	page.WriteString(`<p>Hello index 2</p>`)
-	page.Add(newButton("go page 1", func(session *ihui.Session) {
-		p := session.NewPage("Page 1", ihui.RenderFunc(page1))
+	page.Draw(newButton("go page 1", func(session *ihui.Session) {
+		p := session.NewPageFunc("Page 1", page1)
 		session.ShowPage(p)
 	}))
 }

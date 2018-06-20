@@ -26,11 +26,6 @@ type Page struct {
 	actions map[string][]ActionFunc
 }
 
-// deprecated
-// func NewPage(session *Session, title string, render Renderer) *Page {
-// 	return session.NewPage(title, render)
-// }
-
 func (p *Page) Title() string {
 	return p.title
 }
@@ -39,7 +34,7 @@ func (p *Page) SetTitle(title string) {
 	p.title = title
 }
 
-func (p *Page) Add(r Renderer) {
+func (p *Page) Draw(r Renderer) {
 	r.Render(p)
 }
 
