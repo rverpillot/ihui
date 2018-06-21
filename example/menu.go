@@ -30,7 +30,7 @@ func (menu *Menu) SetActive(name string) {
 	}
 }
 
-func (menu *Menu) Draw(page *ihui.Page) {
+func (menu *Menu) Draw(page ihui.Page) {
 	page.WriteString(`<div id="menu">`)
 	for _, name := range menu.names {
 		if name == menu.active {
@@ -51,7 +51,7 @@ func (menu *Menu) Draw(page *ihui.Page) {
 			style = ""
 		}
 		page.WriteString(fmt.Sprintf(`<div id="%s" style="%s">`, name, style))
-		page.Render(menu.pages[name])
+		page.Draw(menu.pages[name])
 		page.WriteString(`</div>`)
 	}
 }

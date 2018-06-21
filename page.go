@@ -8,60 +8,65 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type PageDrawerFunc func(*Page)
-
-func (f PageDrawerFunc) Draw(page *Page) { f(page) }
-
-type PageDrawer interface {
-	Draw(*Page)
+type Page interface {
+	Title() string
+	SetTitle(title string)
+	Draw(r PageDrawer)
+	WriteString(html string)
+	Write(data []byte) (int, error)
+	NewId() string
+	On(id string, name string, action ActionFunc)
 }
 
-type Page struct {
-	PageDrawer
+type PageDrawerFunc func(Page)
+
+func (f PageDrawerFunc) Draw(page Page) { f(page) }
+
+type PageDrawer interface {
+	Draw(Page)
+}
+
+type BufferedPage struct {
 	buffer  bytes.Buffer
 	title   string
 	countID int
 	actions map[string][]ActionFunc
 }
 
-func NewPage(title string, render PageDrawer) *Page {
-	page := &Page{
-		PageDrawer: render,
-		title:      title,
+func newPage(title string) *BufferedPage {
+	page := &BufferedPage{
+		title:   title,
+		countID: 1000,
 	}
 	return page
 }
 
-func NewPageFunc(title string, fct PageDrawerFunc) *Page {
-	return NewPage(title, PageDrawerFunc(fct))
-}
-
-func (p *Page) Title() string {
+func (p *BufferedPage) Title() string {
 	return p.title
 }
 
-func (p *Page) SetTitle(title string) {
+func (p *BufferedPage) SetTitle(title string) {
 	p.title = title
 }
 
-func (p *Page) Render(r PageDrawer) {
+func (p *BufferedPage) Draw(r PageDrawer) {
 	r.Draw(p)
 }
 
-func (p *Page) WriteString(html string) {
+func (p *BufferedPage) WriteString(html string) {
 	p.buffer.WriteString(html)
 }
 
-func (p *Page) Write(data []byte) {
-	p.buffer.Write(data)
+func (p *BufferedPage) Write(data []byte) (int, error) {
+	return p.buffer.Write(data)
 }
 
-func (p *Page) NewId() string {
+func (p *BufferedPage) NewId() string {
 	p.countID++
-	return fmt.Sprintf("i%d", p.countID)
+	return fmt.Sprintf("_i%d", p.countID)
 }
 
-func (p *Page) On(id string, name string, action ActionFunc) {
+func (p *BufferedPage) On(id string, name string, action ActionFunc) {
 	if action == nil {
 		return
 	}
@@ -69,7 +74,7 @@ func (p *Page) On(id string, name string, action ActionFunc) {
 	p.actions[name] = append(p.actions[name], action)
 }
 
-func (p *Page) Trigger(id string, name string, session *Session) {
+func (p *BufferedPage) Trigger(id string, name string, session *Session) {
 	name = id + "." + name
 	actions := p.actions[name]
 	for _, action := range actions {
@@ -77,13 +82,15 @@ func (p *Page) Trigger(id string, name string, session *Session) {
 	}
 }
 
-func (page *Page) Html() (string, error) {
+func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 	page.actions = make(map[string][]ActionFunc)
 	page.countID = 0
 
 	page.buffer.Reset()
 	page.buffer.WriteString(`<div id="ihui_main">`)
-	page.Draw(page)
+	if drawer != nil {
+		drawer.Draw(page)
+	}
 	page.buffer.WriteString(`</div>`)
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
