@@ -87,7 +87,7 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 	page.countID = 0
 
 	page.buffer.Reset()
-	page.buffer.WriteString(`<div id="ihui_main">`)
+	page.buffer.WriteString(`<div id="_main">`)
 	if drawer != nil {
 		drawer.Draw(page)
 	}

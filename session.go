@@ -34,7 +34,7 @@ func (s *Session) ShowPage(title string, drawer PageDrawer) error {
 
 	event := &Event{
 		Name:   "update",
-		Source: "ihui_main",
+		Source: "_main",
 		Data: map[string]interface{}{
 			"title": s.page.Title(),
 			"html":  html,

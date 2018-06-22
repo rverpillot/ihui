@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//go:generate go-bindata-assetfs -pkg ihui -prefix ihui_resources/ ihui_resources/...
+//go:generate go-bindata-assetfs -pkg ihui -prefix resources/ resources/...
 
 type Event struct {
 	Name   string
@@ -51,8 +51,8 @@ func (h *HTTPHandler) AddJs(path string) {
 }
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.contextRoot)
 	log.Println(r.URL.Path)
+	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.contextRoot)
 
 	if r.URL.Path == "/ws" {
 		var upgrader = websocket.Upgrader{}

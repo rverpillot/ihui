@@ -57,6 +57,7 @@ func start(session *ihui.Session) {
 
 	for {
 		if err := session.ShowPage("Exemple", menu); err != nil {
+			log.Print(err)
 			break
 		}
 	}
@@ -66,7 +67,7 @@ func main() {
 
 	h := ihui.NewHTTPHandler("/app", start)
 
-	http.Handle(h.Path()+"/", h)
+	http.Handle("/", h)
 
 	port := os.Getenv("PORT")
 	if port == "" {

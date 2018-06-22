@@ -49,10 +49,9 @@ $(document).ready(function () {
     addr = protocol + window.location.host + window.location.pathname + "ws"
     ws = new WebSocket(addr);
 
-
-    // ws.onerror = function(event) {
-    //     console.log(event)
-    // }
+    ws.onerror = function(event) {
+        console.log(event)
+    }
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
@@ -62,7 +61,7 @@ $(document).ready(function () {
         switch (msg.Name) {
             case "update":
                 document.title = msg.Data.title
-                updateHTML($("#ihui_main"), msg.Data.html)
+                updateHTML($("#_main"), msg.Data.html)
                 if (msg.Source != currentPage) {
                     window.scrollTo(0, 0)
                     currentPage = msg.Source
