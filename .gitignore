@@ -8,3 +8,4 @@ bindata*.go
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+resources/js/ihui.js

@@ -52,6 +52,11 @@ func (h *HTTPHandler) AddJs(path string) {
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL.Path)
+	if !strings.HasPrefix(r.URL.Path, h.contextRoot+"/") {
+		http.Redirect(w, r, h.contextRoot+"/", http.StatusTemporaryRedirect)
+		return
+	}
+
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.contextRoot)
 
 	if r.URL.Path == "/ws" {
