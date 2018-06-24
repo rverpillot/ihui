@@ -1,11 +1,10 @@
 vendor
-rice-box.go
 node_modules/**
 bin/
 bindata*.go
+resources/js/ihui.js
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
-resources/js/ihui.js

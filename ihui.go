@@ -59,7 +59,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.contextRoot)
 
-	if r.URL.Path == "/ws" {
+	if r.Header.Get("Upgrade") == "websocket" {
 		var upgrader = websocket.Upgrader{}
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -68,7 +68,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		session := newSession(ws)
-		session.Set("contextroot", h.contextRoot)
+		session.Set("path", h.contextRoot)
 		h.startFunc(session)
 
 	} else {
