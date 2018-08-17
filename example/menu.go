@@ -37,7 +37,7 @@ func (menu *Menu) Draw(page ihui.Page) {
 			page.WriteString(fmt.Sprintf(`<div><p>%s</p></div>`, name))
 			continue
 		}
-		id := page.NewId()
+		id := page.UniqueId()
 		page.WriteString(fmt.Sprintf(`<div><a id="%s">%s</a></div>`, id, name))
 		active := name
 		page.On(id, "click", func(session *ihui.Session) {

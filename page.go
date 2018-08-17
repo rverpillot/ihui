@@ -14,7 +14,7 @@ type Page interface {
 	Draw(r PageDrawer)
 	WriteString(html string)
 	Write(data []byte) (int, error)
-	NewId() string
+	UniqueId() string
 	On(id string, name string, action ActionFunc)
 }
 
@@ -61,7 +61,7 @@ func (p *BufferedPage) Write(data []byte) (int, error) {
 	return p.buffer.Write(data)
 }
 
-func (p *BufferedPage) NewId() string {
+func (p *BufferedPage) UniqueId() string {
 	p.countID++
 	return fmt.Sprintf("_i%d", p.countID)
 }
@@ -70,12 +70,12 @@ func (p *BufferedPage) On(id string, name string, action ActionFunc) {
 	if action == nil {
 		return
 	}
-	name = id + "." + name
+	name = id + "/" + name
 	p.actions[name] = append(p.actions[name], action)
 }
 
 func (p *BufferedPage) Trigger(id string, name string, session *Session) {
-	name = id + "." + name
+	name = id + "/" + name
 	actions := p.actions[name]
 	for _, action := range actions {
 		action(session)
@@ -102,8 +102,8 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 		id, _ := s.Attr("id")
 
 		for name := range page.actions {
-			if strings.HasPrefix(name, id+".") {
-				action := strings.Split(name, ".")[1]
+			if strings.HasPrefix(name, id+"/") {
+				action := strings.Split(name, "/")[1]
 
 				switch action {
 				case "click":
