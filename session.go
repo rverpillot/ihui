@@ -53,6 +53,21 @@ func (s *Session) ShowPage(title string, drawer PageDrawer) error {
 	return nil
 }
 
+func (s *Session) Script(script string) error {
+	event := &Event{
+		Name: "update",
+		Data: script,
+	}
+	if err := s.sendEvent(event); err != nil {
+		return err
+	}
+	if _, err := s.recvEvent(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Session) sendEvent(event *Event) error {
 	if err := websocket.WriteJSON(s.ws, event); err != nil {
 		return err

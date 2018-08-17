@@ -69,6 +69,7 @@ $(document).ready(function () {
             case "script":
                 // console.log(msg.Data)
                 jQuery.globalEval(msg.Data)
+                sendMsg(null, "script", "global", "ok")
                 break
         }
 
