@@ -21,18 +21,7 @@ function updateHTML(page, html) {
             }
             return true
         },
-        childrenOnly: true,
-        
-        // onNodeAdded: function(el) {
-        //     if ($(el).attr("data-action")) {
-        //         handleEvents(el)
-        //     }
-        // },
-        // onElUpdated: function(el) {
-        //     if ($(el).attr("data-action")) {
-        //         handleEvents(el)
-        //     }
-        // }
+        childrenOnly: true
     })
 
 //    page.trigger("ihui:display", page)

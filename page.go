@@ -3,7 +3,6 @@ package ihui
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -32,7 +31,7 @@ type BufferedPage struct {
 	countID int
 	exit    bool
 	evt     string
-	actions map[string][]ActionFunc
+	actions map[string]Action
 }
 
 func newPage(title string) *BufferedPage {
@@ -69,24 +68,23 @@ func (p *BufferedPage) UniqueId() string {
 	return fmt.Sprintf("u%d", p.countID)
 }
 
-func (p *BufferedPage) On(id string, name string, action ActionFunc) {
+func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
-	name = id + "/" + name
-	p.actions[name] = append(p.actions[name], action)
+	id := p.UniqueId()
+	p.actions[id] = Action{Name: name, Selector: selector, Fct: action}
 }
 
-func (p *BufferedPage) Trigger(id string, name string, session *Session) {
-	name = id + "/" + name
-	actions := p.actions[name]
-	for _, action := range actions {
-		action(session)
+func (p *BufferedPage) Trigger(id string, session *Session) {
+	action, ok := p.actions[id]
+	if ok {
+		action.Fct(session)
 	}
 }
 
 func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
-	page.actions = make(map[string][]ActionFunc)
+	page.actions = make(map[string]Action)
 	page.countID = 0
 
 	page.buffer.Reset()
@@ -108,42 +106,37 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 		return "", err
 	}
 
-	doc.Find("[id]").Each(func(i int, s *goquery.Selection) {
-		id, _ := s.Attr("id")
+	for id, action := range page.actions {
+		doc.Find(action.Selector).Each(func(i int, s *goquery.Selection) {
 
-		for name := range page.actions {
-			if strings.HasPrefix(name, id+"/") {
-				action := strings.Split(name, "/")[1]
-
-				switch action {
-				case "click":
-					s.SetAttr("onclick", `sendMsg(event, "click","`+id+`", null)`)
-					if goquery.NodeName(s) == "a" {
-						s.SetAttr("href", "")
-					}
-
-				case "check":
-					s.SetAttr("onchange", `sendMsg(event, "check","`+id+`", $(this).prop("checked"))`)
-
-				case "change":
-					s.SetAttr("onchange", `sendMsg(event, "change","`+id+`", $(this).val())`)
-
-				case "input":
-					s.SetAttr("oninput", `sendMsg(event, "change","`+id+`", $(this).val())`)
-
-				case "submit":
-					s.SetAttr("onsubmit", `sendMsg(event, "form","`+id+`", $(this).serializeObject())`)
-
-				case "form":
-					s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-						ss.SetAttr("onchange", `sendMsg(event, "change","`+id+`", { name: $(this).attr("name"), val: $(this).val() })`)
-					})
+			switch action.Name {
+			case "click":
+				val := s.AttrOr("data-value", s.AttrOr("data-id", s.AttrOr("id", "")))
+				s.SetAttr("onclick", `sendMsg(event, "click","`+id+`", "`+val+`")`)
+				if goquery.NodeName(s) == "a" {
+					s.SetAttr("href", "")
 				}
+
+			case "check":
+				s.SetAttr("onchange", `sendMsg(event, "check","`+id+`", $(this).prop("checked"))`)
+
+			case "change":
+				s.SetAttr("onchange", `sendMsg(event, "change","`+id+`", $(this).val())`)
+
+			case "input":
+				s.SetAttr("oninput", `sendMsg(event, "change","`+id+`", $(this).val())`)
+
+			case "submit":
+				s.SetAttr("onsubmit", `sendMsg(event, "form","`+id+`", $(this).serializeObject())`)
+
+			case "form":
+				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
+					ss.SetAttr("onchange", `sendMsg(event, "change","`+id+`", { name: $(this).attr("name"), val: $(this).val() })`)
+				})
 			}
+		})
 
-		}
-
-	})
+	}
 
 	return doc.Html()
 }

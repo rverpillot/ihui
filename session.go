@@ -52,7 +52,7 @@ func (s *Session) ShowPage(title string, drawer PageDrawer) error {
 			return err
 		}
 
-		page.Trigger(event.Source, event.Name, s)
+		page.Trigger(event.Source, s)
 
 		if s.page != page {
 			page.evt = "new"
