@@ -1,6 +1,8 @@
 package ihui
 
 import (
+	"log"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -26,36 +28,43 @@ func (s *Session) Get(name string) interface{} {
 }
 
 func (s *Session) ShowPage(title string, drawer PageDrawer) error {
-	s.page = newPage(title)
-	html, err := s.page.render(drawer)
-	if err != nil {
-		return err
-	}
+	page := newPage(title)
+	s.page = page
 
-	event := &Event{
-		Name:   "update",
-		Source: "_main",
-		Data: map[string]interface{}{
-			"title": s.page.Title(),
-			"html":  html,
-		},
-	}
-	err = s.sendEvent(event)
-	if err != nil {
-		return err
-	}
-	event, err = s.recvEvent()
-	if err != nil {
-		return err
-	}
+	for {
+		html, err := page.render(drawer)
+		if err != nil {
+			return err
+		}
 
-	s.page.Trigger(event.Source, event.Name, s)
+		event := &Event{
+			Name: "update",
+			Data: map[string]interface{}{
+				"title": page.Title(),
+				"html":  html,
+			},
+		}
+		err = s.sendEvent(event)
+		if err != nil {
+			return err
+		}
+		event, err = s.recvEvent()
+		if err != nil {
+			return err
+		}
+
+		page.Trigger(event.Source, event.Name, s)
+		if page.MustQuit() {
+			break
+		}
+	}
+	log.Println("exit page")
 	return nil
 }
 
 func (s *Session) Script(script string) error {
 	event := &Event{
-		Name: "update",
+		Name: "script",
 		Data: script,
 	}
 	if err := s.sendEvent(event); err != nil {
@@ -81,4 +90,8 @@ func (s *Session) recvEvent() (*Event, error) {
 		return nil, err
 	}
 	return &event, nil
+}
+
+func (s *Session) QuitPage() {
+	s.page.Quit()
 }

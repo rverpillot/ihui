@@ -3,15 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    {{range .CSSPaths}}
-    <link rel="stylesheet" type="text/css" href="{{.}}"> 
-    {{end}}
     <script src="{{.Path}}/js/jquery-3.3.1.min.js"></script>
     <script src="{{.Path}}/js/jquery.serialize-object.min.js"></script>
     <script src="{{.Path}}/js/ihui.js"></script>
-    {{range .JSPaths}}
-    <script src="{{.}}"></script>
-    {{end}}
 </head>
 
 <body style="height:100%">

@@ -1,6 +1,7 @@
 package ihui
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -20,13 +21,13 @@ type Event struct {
 
 type ActionFunc func(*Session)
 
+func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
+
 type HTTPHandler struct {
 	contextRoot  string
 	index        string
 	assetHandler http.Handler
 	startFunc    ActionFunc
-	CSSPaths     []string
-	JSPaths      []string
 }
 
 func NewHTTPHandler(contextroot string, startFunc ActionFunc) *HTTPHandler {
@@ -46,14 +47,6 @@ func (h *HTTPHandler) Path() string {
 func (h *HTTPHandler) SetIndexPage(index string) {
 	h.index = index
 }
-
-// func (h *HTTPHandler) AddCss(path string) {
-// 	h.CSSPaths = append(h.CSSPaths, path)
-// }
-
-// func (h *HTTPHandler) AddJs(path string) {
-// 	h.JSPaths = append(h.JSPaths, path)
-// }
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL.Path)
