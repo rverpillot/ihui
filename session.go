@@ -1,8 +1,6 @@
 package ihui
 
 import (
-	"log"
-
 	"github.com/gorilla/websocket"
 )
 
@@ -29,16 +27,17 @@ func (s *Session) Get(name string) interface{} {
 
 func (s *Session) ShowPage(title string, drawer PageDrawer) error {
 	page := newPage(title)
-	s.page = page
 
-	for {
+	for !page.exit {
+		s.page = page
+
 		html, err := page.render(drawer)
 		if err != nil {
 			return err
 		}
 
 		event := &Event{
-			Name: "update",
+			Name: page.evt,
 			Data: map[string]interface{}{
 				"title": page.Title(),
 				"html":  html,
@@ -54,11 +53,13 @@ func (s *Session) ShowPage(title string, drawer PageDrawer) error {
 		}
 
 		page.Trigger(event.Source, event.Name, s)
-		if page.MustQuit() {
-			break
+
+		if s.page != page {
+			page.evt = "new"
+		} else {
+			page.evt = "update"
 		}
 	}
-	log.Println("exit page")
 	return nil
 }
 
@@ -93,5 +94,5 @@ func (s *Session) recvEvent() (*Event, error) {
 }
 
 func (s *Session) QuitPage() {
-	s.page.Quit()
+	s.page.exit = true
 }

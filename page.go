@@ -31,6 +31,7 @@ type BufferedPage struct {
 	title   string
 	countID int
 	exit    bool
+	evt     string
 	actions map[string][]ActionFunc
 }
 
@@ -38,6 +39,7 @@ func newPage(title string) *BufferedPage {
 	page := &BufferedPage{
 		title:   title,
 		countID: 1000,
+		evt:     "new",
 	}
 	return page
 }
@@ -60,14 +62,6 @@ func (p *BufferedPage) WriteString(html string) {
 
 func (p *BufferedPage) Write(data []byte) (int, error) {
 	return p.buffer.Write(data)
-}
-
-func (p *BufferedPage) Quit() {
-	p.exit = true
-}
-
-func (p *BufferedPage) MustQuit() bool {
-	return p.exit
 }
 
 func (p *BufferedPage) UniqueId() string {
@@ -96,11 +90,18 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 	page.countID = 0
 
 	page.buffer.Reset()
-	page.buffer.WriteString(`<div id="_main">`)
+
+	if page.evt == "update" {
+		page.buffer.WriteString(`<div id="main">`)
+	}
+
 	if drawer != nil {
 		drawer.Draw(page)
 	}
-	page.buffer.WriteString(`</div>`)
+
+	if page.evt == "update" {
+		page.buffer.WriteString(`</div>`)
+	}
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
 	if err != nil {

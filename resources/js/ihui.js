@@ -58,14 +58,15 @@ $(document).ready(function () {
         console.log(msg)
         var body = $(document.body)
 
-        switch (msg.Name) {
+        switch (msg.Name) { 
+            case "new":
+                document.title = msg.Data.title
+                $("body > #main").html(msg.Data.html)
+                break
+
             case "update":
                 document.title = msg.Data.title
-                updateHTML($("#_main"), msg.Data.html)
-                if (msg.Source != currentPage) {
-                    window.scrollTo(0, 0)
-                    currentPage = msg.Source
-                }
+                updateHTML($("body > #main"), msg.Data.html)
                 break
 
             case "script":
