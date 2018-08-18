@@ -92,7 +92,7 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 	page.buffer.Reset()
 
 	if page.evt == "update" {
-		page.buffer.WriteString(`<div id="main">`)
+		page.buffer.WriteString(`<div id="main">`) // because morphdom processing
 	}
 
 	if drawer != nil {
