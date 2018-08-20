@@ -24,13 +24,14 @@ func newButton(label string, action ihui.ActionFunc) *Button {
 }
 
 func (b *Button) Draw(page ihui.Page) {
-	b.id = page.UniqueId("i")
-	html := fmt.Sprintf(`<button id="%s" class="mybutton">%s</button>`, b.id, b.label)
+	b.id = page.UniqueId("id")
+	html := fmt.Sprintf(`<button id="%s">%s</button>`, b.id, b.label)
 	page.WriteString(html)
-	page.On("click", ".mybutton", func(session *ihui.Session) {
+	sel := "[id=" + b.id + "]"
+	page.On("click", sel, func(session *ihui.Session) {
 		log.Println("click button!")
 	})
-	page.On("click", ".mybutton", b.action)
+	page.On("click", sel, b.action)
 }
 
 // Pages

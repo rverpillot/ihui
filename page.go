@@ -76,13 +76,16 @@ func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 	p.actions[id] = []Action{Action{Name: name, Selector: selector, Fct: action}}
 }
 
-func (p *BufferedPage) Trigger(id string, session *Session) {
+func (p *BufferedPage) Trigger(id string, session *Session) int {
+	count := 0
 	actions, ok := p.actions[id]
 	if ok {
 		for _, action := range actions {
 			action.Fct(session)
+			count++
 		}
 	}
+	return count
 }
 
 func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
@@ -157,12 +160,12 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 				page.actions[_id] = append(page.actions[_id], action)
 			}
 		})
-
-		removeAllAttrs(doc, "_onclick-id")
-		removeAllAttrs(doc, "_onchange-id")
-		removeAllAttrs(doc, "_oninput-id")
-		removeAllAttrs(doc, "_onsubmit-id")
 	}
+
+	removeAllAttrs(doc, "_onclick-id")
+	removeAllAttrs(doc, "_onchange-id")
+	removeAllAttrs(doc, "_oninput-id")
+	removeAllAttrs(doc, "_onsubmit-id")
 
 	return doc.Html()
 }

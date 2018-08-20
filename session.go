@@ -47,12 +47,17 @@ func (s *Session) ShowPage(title string, drawer PageDrawer) error {
 		if err != nil {
 			return err
 		}
-		event, err = s.recvEvent()
-		if err != nil {
-			return err
-		}
 
-		page.Trigger(event.Source, s)
+		for {
+			event, err = s.recvEvent()
+			if err != nil {
+				return err
+			}
+
+			if page.Trigger(event.Source, s) > 0 {
+				break
+			}
+		}
 
 		if s.page != page {
 			page.evt = "new"
