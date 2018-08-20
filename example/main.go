@@ -24,7 +24,7 @@ func newButton(label string, action ihui.ActionFunc) *Button {
 }
 
 func (b *Button) Draw(page ihui.Page) {
-	b.id = page.UniqueId("id")
+	b.id = page.UniqueId("id_")
 	html := fmt.Sprintf(`<button id="%s">%s</button>`, b.id, b.label)
 	page.WriteString(html)
 	sel := "[id=" + b.id + "]"
