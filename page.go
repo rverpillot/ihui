@@ -112,17 +112,19 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 	}
 
 	addAttr := func(s *goquery.Selection, name string, id string, value string) string {
-		id = s.AttrOr("_"+name+"-id", id)
-		s.SetAttr("_"+name+"-id", id)
+		attr := "_" + name + "_id"
+		id = s.AttrOr(attr, id)
+		s.SetAttr(attr, id)
 		s.SetAttr(name, fmt.Sprintf(`_s(event,"%s",%s);`, id, value))
 		return id
 	}
 
-	removeAllAttrs := func(doc *goquery.Document, name string) {
-		doc.Find("[" + name + "]").Each(func(i int, s *goquery.Selection) {
-			s.RemoveAttr(name)
-		})
-
+	removeAllAttrs := func(doc *goquery.Document, names ...string) {
+		for _, name := range names {
+			doc.Find("[" + name + "]").Each(func(i int, s *goquery.Selection) {
+				s.RemoveAttr(name)
+			})
+		}
 	}
 
 	for id, actions := range page.actions {
@@ -162,10 +164,7 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 		})
 	}
 
-	removeAllAttrs(doc, "_onclick-id")
-	removeAllAttrs(doc, "_onchange-id")
-	removeAllAttrs(doc, "_oninput-id")
-	removeAllAttrs(doc, "_onsubmit-id")
+	removeAllAttrs(doc, "_onclick_id", "_onchange_id", "_oninput_id", "_onsubmit_id")
 
 	return doc.Html()
 }
