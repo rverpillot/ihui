@@ -13,7 +13,7 @@ type Page interface {
 	Draw(r PageDrawer)
 	WriteString(html string)
 	Write(data []byte) (int, error)
-	UniqueId() string
+	UniqueId(string) string
 	On(id string, name string, action ActionFunc)
 }
 
@@ -63,16 +63,16 @@ func (p *BufferedPage) Write(data []byte) (int, error) {
 	return p.buffer.Write(data)
 }
 
-func (p *BufferedPage) UniqueId() string {
+func (p *BufferedPage) UniqueId(prefix string) string {
 	p.countID++
-	return fmt.Sprintf("u%d", p.countID)
+	return fmt.Sprintf("%s%d", prefix, p.countID)
 }
 
 func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
-	id := p.UniqueId()
+	id := p.UniqueId("a")
 	p.actions[id] = []Action{Action{Name: name, Selector: selector, Fct: action}}
 }
 
@@ -109,10 +109,17 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 	}
 
 	addAttr := func(s *goquery.Selection, name string, id string, value string) string {
-		id = s.AttrOr("data-"+name+"-id", id)
-		s.SetAttr("data-"+name+"-id", id)
-		s.SetAttr(name, fmt.Sprintf(`sendMsg(event,"%s","%s",%s);`, name, id, value))
+		id = s.AttrOr("_"+name+"-id", id)
+		s.SetAttr("_"+name+"-id", id)
+		s.SetAttr(name, fmt.Sprintf(`_s(event,"%s",%s);`, id, value))
 		return id
+	}
+
+	removeAllAttrs := func(doc *goquery.Document, name string) {
+		doc.Find("[" + name + "]").Each(func(i int, s *goquery.Selection) {
+			s.RemoveAttr(name)
+		})
+
 	}
 
 	for id, actions := range page.actions {
@@ -151,6 +158,10 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 			}
 		})
 
+		removeAllAttrs(doc, "_onclick-id")
+		removeAllAttrs(doc, "_onchange-id")
+		removeAllAttrs(doc, "_oninput-id")
+		removeAllAttrs(doc, "_onsubmit-id")
 	}
 
 	return doc.Html()

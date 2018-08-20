@@ -11,6 +11,9 @@ global.sendMsg = function (event, name, source, data) {
     var msg = JSON.stringify({ name: name, source: source, data: data })
     ws.send(msg)
 }
+global._s = function(event, source, data) {
+    sendMsg(event, "action", source, data)
+}
 
 
 function updateHTML(page, html) {
