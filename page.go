@@ -33,15 +33,19 @@ type BufferedPage struct {
 	exit    bool
 	evt     string
 	session *Session
+	drawer  PageDrawer
+	modal   bool
 	actions map[string][]Action
 }
 
-func newPage(title string, session *Session) *BufferedPage {
+func newPage(title string, session *Session, modal bool, drawer PageDrawer) *BufferedPage {
 	page := &BufferedPage{
 		title:   title,
 		countID: 1000,
 		evt:     "new",
 		session: session,
+		modal:   modal,
+		drawer:  drawer,
 	}
 	return page
 }
@@ -98,7 +102,7 @@ func (p *BufferedPage) Trigger(id string, value interface{}) int {
 	return count
 }
 
-func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
+func (page *BufferedPage) render() (string, error) {
 	page.actions = make(map[string][]Action)
 	page.countID = 0
 
@@ -108,8 +112,8 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 		page.buffer.WriteString(`<div id="main">`) // because morphdom processing
 	}
 
-	if drawer != nil {
-		drawer.Draw(page)
+	if page.drawer != nil {
+		page.drawer.Draw(page)
 	}
 
 	if page.evt == "update" {
