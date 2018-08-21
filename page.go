@@ -133,6 +133,10 @@ func (page *BufferedPage) render(drawer PageDrawer) (string, error) {
 	for id, actions := range page.actions {
 		action := actions[0]
 
+		if action.Name == "load" {
+			continue
+		}
+
 		doc.Find(action.Selector).Each(func(i int, s *goquery.Selection) {
 			_id := id
 
