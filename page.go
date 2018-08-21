@@ -41,6 +41,7 @@ func newPage(title string, session *Session) *BufferedPage {
 		title:   title,
 		countID: 1000,
 		evt:     "new",
+		session: session,
 	}
 	return page
 }
