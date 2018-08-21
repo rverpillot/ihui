@@ -28,8 +28,8 @@ func (b *Button) Draw(page ihui.Page) {
 	html := fmt.Sprintf(`<button id="%s">%s</button>`, b.id, b.label)
 	page.WriteString(html)
 	sel := "[id=" + b.id + "]"
-	page.On("click", sel, func(session *ihui.Session) {
-		log.Println("click button!")
+	page.On("click", sel, func(session *ihui.Session, value interface{}) {
+		log.Printf("click button! %s", value)
 	})
 	page.On("click", sel, b.action)
 }
@@ -37,12 +37,12 @@ func (b *Button) Draw(page ihui.Page) {
 // Pages
 func page1(page ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
-	page.Draw(newButton("Exit", func(session *ihui.Session) {
+	page.Draw(newButton("Exit", func(session *ihui.Session, value interface{}) {
 		log.Println("close!")
 		session.QuitPage()
 	}))
 
-	page.On("load", "page", func(s *ihui.Session) {
+	page.On("load", "page", func(s *ihui.Session, value interface{}) {
 		log.Println("page1 loaded!")
 	})
 }
@@ -53,7 +53,7 @@ func tab1(page ihui.Page) {
 
 func tab2(page ihui.Page) {
 	page.WriteString(`<p>Hello Tab 2</p>`)
-	page.Draw(newButton("go page 1", func(session *ihui.Session) {
+	page.Draw(newButton("go page 1", func(session *ihui.Session, value interface{}) {
 		session.ShowPage("Page 1", ihui.PageDrawerFunc(page1))
 	}))
 }

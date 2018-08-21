@@ -19,7 +19,7 @@ type Event struct {
 	Data   interface{}
 }
 
-type ActionFunc func(*Session)
+type ActionFunc func(*Session, interface{})
 
 func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
 
@@ -31,12 +31,12 @@ type Action struct {
 
 type HTTPHandler struct {
 	assetHandler http.Handler
-	startFunc    ActionFunc
+	startFunc    func(*Session)
 	templ        *template.Template
 	Path         string
 }
 
-func NewHTTPHandler(startFunc ActionFunc) *HTTPHandler {
+func NewHTTPHandler(startFunc func(*Session)) *HTTPHandler {
 	return &HTTPHandler{
 		assetHandler: http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/"}),
 		startFunc:    startFunc,

@@ -79,12 +79,12 @@ func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 	p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
 }
 
-func (p *BufferedPage) Trigger(id string, session *Session) int {
+func (p *BufferedPage) Trigger(id string, session *Session, value interface{}) int {
 	count := 0
 	actions, ok := p.actions[id]
 	if ok {
 		for _, action := range actions {
-			action.Fct(session)
+			action.Fct(session, value)
 			count++
 		}
 	}
