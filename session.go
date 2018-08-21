@@ -26,7 +26,7 @@ func (s *Session) Get(name string) interface{} {
 }
 
 func (s *Session) ShowPage(title string, drawer PageDrawer) error {
-	page := newPage(title)
+	page := newPage(title, s)
 
 	for !page.exit {
 		s.page = page
@@ -54,7 +54,7 @@ func (s *Session) ShowPage(title string, drawer PageDrawer) error {
 				return err
 			}
 
-			if page.Trigger(event.Source, s, event.Data) > 0 {
+			if page.Trigger(event.Source, event.Data) > 0 {
 				break
 			}
 		}

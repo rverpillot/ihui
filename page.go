@@ -14,6 +14,7 @@ type Page interface {
 	WriteString(html string)
 	Write(data []byte) (int, error)
 	UniqueId(string) string
+	Session() *Session
 	On(id string, name string, action ActionFunc)
 }
 
@@ -31,10 +32,11 @@ type BufferedPage struct {
 	countID int
 	exit    bool
 	evt     string
+	session *Session
 	actions map[string][]Action
 }
 
-func newPage(title string) *BufferedPage {
+func newPage(title string, session *Session) *BufferedPage {
 	page := &BufferedPage{
 		title:   title,
 		countID: 1000,
@@ -68,6 +70,10 @@ func (p *BufferedPage) UniqueId(prefix string) string {
 	return fmt.Sprintf("%s%d", prefix, p.countID)
 }
 
+func (p *BufferedPage) Session() *Session {
+	return p.session
+}
+
 func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 	if action == nil {
 		return
@@ -79,12 +85,12 @@ func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 	p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
 }
 
-func (p *BufferedPage) Trigger(id string, session *Session, value interface{}) int {
+func (p *BufferedPage) Trigger(id string, value interface{}) int {
 	count := 0
 	actions, ok := p.actions[id]
 	if ok {
 		for _, action := range actions {
-			action.Fct(session, value)
+			action.Fct(p.session, value)
 			count++
 		}
 	}
