@@ -72,8 +72,11 @@ func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
-	id := p.UniqueId("a")
-	p.actions[id] = []Action{Action{Name: name, Selector: selector, Fct: action}}
+	id := selector
+	if name != "load" {
+		id = p.UniqueId("a")
+	}
+	p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
 }
 
 func (p *BufferedPage) Trigger(id string, session *Session) int {

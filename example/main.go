@@ -41,6 +41,10 @@ func page1(page ihui.Page) {
 		log.Println("close!")
 		session.QuitPage()
 	}))
+
+	page.On("load", "page", func(s *ihui.Session) {
+		log.Println("page1 loaded!")
+	})
 }
 
 func tab1(page ihui.Page) {

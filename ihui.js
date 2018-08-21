@@ -52,7 +52,7 @@ $(document).ready(function () {
             case "new":
                 document.title = msg.Data.title
                 $("body > #main").html(msg.Data.html)
-                sendMsg(null, "page", "loaded", null)
+                sendMsg(null, "load", "page", null)
                 break
 
             case "update":
