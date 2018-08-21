@@ -14,7 +14,7 @@ type Page interface {
 	WriteString(html string)
 	Write(data []byte) (int, error)
 	UniqueId(string) string
-	Session() *Session
+	Get(string) interface{}
 	On(id string, name string, action ActionFunc)
 }
 
@@ -70,8 +70,8 @@ func (p *BufferedPage) UniqueId(prefix string) string {
 	return fmt.Sprintf("%s%d", prefix, p.countID)
 }
 
-func (p *BufferedPage) Session() *Session {
-	return p.session
+func (p *BufferedPage) Get(name string) interface{} {
+	return p.session.Get(name)
 }
 
 func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
