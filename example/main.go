@@ -71,7 +71,7 @@ func start(session *ihui.Session) {
 
 func main() {
 
-	h := ihui.NewHTTPHandler("/app", start)
+	h := ihui.NewHTTPHandler(start)
 
 	http.Handle("/", h)
 

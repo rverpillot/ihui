@@ -1,4 +1,5 @@
-morphdom = require('morphdom')
+
+var morphdom = require('morphdom')
 
 var ws
 
@@ -25,10 +26,7 @@ function updateHTML(page, html) {
         childrenOnly: true
     })
 
-//    page.trigger("ihui:display", page)
 }
-
-var currentPage = null
 
 
 $(document).ready(function () {
@@ -36,7 +34,7 @@ $(document).ready(function () {
     if (window.location.protocol == "https:") {
         protocol = "wss://"
     }
-    addr = protocol + window.location.host + window.location.pathname + "ws"
+    addr = protocol + window.location.host + "{{.Path}}/ws"
     ws = new WebSocket(addr);
 
     ws.onerror = function(event) {
