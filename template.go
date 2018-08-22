@@ -5,25 +5,24 @@ import (
 	"log"
 )
 
-type TemplateDrawer struct {
-	PageDrawer
+type PageTemplate struct {
 	template *template.Template
 	data     interface{}
 }
 
-func NewTemplateDrawer(tmpl string, data interface{}) *TemplateDrawer {
+func NewPageTemplate(tmpl string, data interface{}) *PageTemplate {
 	t, err := template.New("webpage").Parse(tmpl)
 	if err != nil {
 		log.Print(err)
 		return nil
 	}
-	return &TemplateDrawer{
+	return &PageTemplate{
 		template: t,
 		data:     data,
 	}
 }
 
-func (ptr *TemplateDrawer) Draw(page *BufferedPage) {
+func (ptr *PageTemplate) Render(page Page) {
 	err := ptr.template.Execute(page, ptr.data)
 	if err != nil {
 		log.Print(err)

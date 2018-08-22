@@ -8,15 +8,15 @@ import (
 
 type Menu struct {
 	names  []string
-	pages  map[string]ihui.PageDrawer
+	pages  map[string]ihui.PageRenderer
 	active string
 }
 
 func NewMenu() *Menu {
-	return &Menu{pages: make(map[string]ihui.PageDrawer)}
+	return &Menu{pages: make(map[string]ihui.PageRenderer)}
 }
 
-func (menu *Menu) Add(name string, r ihui.PageDrawer) {
+func (menu *Menu) Add(name string, r ihui.PageRenderer) {
 	menu.names = append(menu.names, name)
 	menu.pages[name] = r
 	if menu.active == "" {
@@ -30,7 +30,7 @@ func (menu *Menu) SetActive(name string) {
 	}
 }
 
-func (menu *Menu) Draw(page ihui.Page) {
+func (menu *Menu) Render(page ihui.Page) {
 	page.WriteString(`<div id="menu">`)
 	for _, name := range menu.names {
 		if name == menu.active {

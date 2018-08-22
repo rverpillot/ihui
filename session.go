@@ -1,13 +1,15 @@
 package ihui
 
 import (
+	"fmt"
+
 	"github.com/gorilla/websocket"
 )
 
 type Session struct {
 	params map[string]interface{}
 	ws     *websocket.Conn
-	page   *BufferedPage
+	page   *PageHTML
 }
 
 func newSession(ws *websocket.Conn) *Session {
@@ -25,7 +27,7 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
-func (s *Session) ShowPage(drawer PageDrawer, options *Options) error {
+func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 	if options == nil {
 		options = &Options{}
 	}
@@ -33,7 +35,7 @@ func (s *Session) ShowPage(drawer PageDrawer, options *Options) error {
 		options.Modal = true
 	}
 
-	page := newPage(s, drawer, *options)
+	page := newHTMLPage(s, drawer, *options)
 
 	if !page.Modal() {
 		s.page = page
@@ -43,7 +45,7 @@ func (s *Session) ShowPage(drawer PageDrawer, options *Options) error {
 	for !page.exit {
 		s.page = page
 
-		html, err := page.render()
+		html, err := page.html()
 		if err != nil {
 			return err
 		}
@@ -83,10 +85,10 @@ func (s *Session) ShowPage(drawer PageDrawer, options *Options) error {
 	return nil
 }
 
-func (s *Session) Script(script string) error {
+func (s *Session) Script(script string, args ...interface{}) error {
 	event := &Event{
 		Name: "script",
-		Data: script,
+		Data: fmt.Sprintf(script, args...),
 	}
 	if err := s.sendEvent(event); err != nil {
 		return err

@@ -7,13 +7,12 @@ import (
 	"github.com/yosssi/ace"
 )
 
-type AceTemplateDrawer struct {
-	PageDrawer
+type PageAce struct {
 	template *template.Template
 	data     interface{}
 }
 
-func NewAceTemplateDrawer(content []byte, data interface{}) *AceTemplateDrawer {
+func NewPageAce(content []byte, data interface{}) *PageAce {
 	options := ace.InitializeOptions(nil)
 	options.Asset = func(name string) ([]byte, error) {
 		return content, nil
@@ -23,13 +22,13 @@ func NewAceTemplateDrawer(content []byte, data interface{}) *AceTemplateDrawer {
 	if err != nil {
 		panic(err)
 	}
-	return &AceTemplateDrawer{
+	return &PageAce{
 		template: t,
 		data:     data,
 	}
 }
 
-func (ptr *AceTemplateDrawer) Draw(page *BufferedPage) {
+func (ptr *PageAce) Render(page Page) {
 	err := ptr.template.Execute(page, ptr.data)
 	if err != nil {
 		log.Print(err)

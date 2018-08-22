@@ -23,7 +23,7 @@ func newButton(label string, action ihui.ActionFunc) *Button {
 	}
 }
 
-func (b *Button) Draw(page ihui.Page) {
+func (b *Button) Render(page ihui.Page) {
 	b.id = page.UniqueId("id_")
 	html := fmt.Sprintf(`<button id="%s">%s</button>`, b.id, b.label)
 	page.WriteString(html)
@@ -54,15 +54,15 @@ func tab1(page ihui.Page) {
 func tab2(page ihui.Page) {
 	page.WriteString(`<p>Hello Tab 2</p>`)
 	page.Draw(newButton("go page 1", func(session *ihui.Session, event ihui.Event) {
-		session.ShowPage(ihui.PageDrawerFunc(page1), &ihui.Options{Title: "Page 1", Modal: true})
+		session.ShowPage(ihui.PageRendererFunc(page1), &ihui.Options{Title: "Page 1", Modal: true})
 	}))
 }
 
 // Init
 func start(session *ihui.Session) {
 	menu := NewMenu()
-	menu.Add("Tab1", ihui.PageDrawerFunc(tab1))
-	menu.Add("Tab2", ihui.PageDrawerFunc(tab2))
+	menu.Add("Tab1", ihui.PageRendererFunc(tab1))
+	menu.Add("Tab2", ihui.PageRendererFunc(tab2))
 
 	if err := session.ShowPage(menu, &ihui.Options{Title: "Example"}); err != nil {
 		log.Print(err)

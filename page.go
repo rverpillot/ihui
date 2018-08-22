@@ -13,9 +13,7 @@ type Options struct {
 }
 
 type Page interface {
-	Title() string
-	SetTitle(title string)
-	Draw(r PageDrawer)
+	Draw(r PageRenderer)
 	WriteString(html string)
 	Write(data []byte) (int, error)
 	UniqueId(string) string
@@ -23,15 +21,15 @@ type Page interface {
 	On(id string, name string, action ActionFunc)
 }
 
-type PageDrawerFunc func(Page)
+type PageRendererFunc func(Page)
 
-func (f PageDrawerFunc) Draw(page Page) { f(page) }
+func (f PageRendererFunc) Render(page Page) { f(page) }
 
-type PageDrawer interface {
-	Draw(Page)
+type PageRenderer interface {
+	Render(Page)
 }
 
-type BufferedPage struct {
+type PageHTML struct {
 	buffer  bytes.Buffer
 	options Options
 	title   string
@@ -39,12 +37,12 @@ type BufferedPage struct {
 	exit    bool
 	evt     string
 	session *Session
-	drawer  PageDrawer
+	drawer  PageRenderer
 	actions map[string][]Action
 }
 
-func newPage(session *Session, drawer PageDrawer, options Options) *BufferedPage {
-	page := &BufferedPage{
+func newHTMLPage(session *Session, drawer PageRenderer, options Options) *PageHTML {
+	page := &PageHTML{
 		options: options,
 		countID: 1000,
 		evt:     "new",
@@ -54,40 +52,40 @@ func newPage(session *Session, drawer PageDrawer, options Options) *BufferedPage
 	return page
 }
 
-func (p *BufferedPage) Title() string {
+func (p *PageHTML) Title() string {
 	return p.options.Title
 }
 
-func (p *BufferedPage) SetTitle(title string) {
+func (p *PageHTML) SetTitle(title string) {
 	p.options.Title = title
 }
 
-func (p *BufferedPage) Modal() bool {
+func (p *PageHTML) Modal() bool {
 	return p.options.Modal
 }
 
-func (p *BufferedPage) Draw(r PageDrawer) {
-	r.Draw(p)
+func (p *PageHTML) Draw(r PageRenderer) {
+	r.Render(p)
 }
 
-func (p *BufferedPage) WriteString(html string) {
+func (p *PageHTML) WriteString(html string) {
 	p.buffer.WriteString(html)
 }
 
-func (p *BufferedPage) Write(data []byte) (int, error) {
+func (p *PageHTML) Write(data []byte) (int, error) {
 	return p.buffer.Write(data)
 }
 
-func (p *BufferedPage) UniqueId(prefix string) string {
+func (p *PageHTML) UniqueId(prefix string) string {
 	p.countID++
 	return fmt.Sprintf("%s%d", prefix, p.countID)
 }
 
-func (p *BufferedPage) Get(name string) interface{} {
+func (p *PageHTML) Get(name string) interface{} {
 	return p.session.Get(name)
 }
 
-func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
+func (p *PageHTML) On(name string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
@@ -98,7 +96,7 @@ func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 	p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
 }
 
-func (p *BufferedPage) Trigger(event Event) int {
+func (p *PageHTML) Trigger(event Event) int {
 	count := 0
 	actions, ok := p.actions[event.Target]
 	if ok {
@@ -110,7 +108,7 @@ func (p *BufferedPage) Trigger(event Event) int {
 	return count
 }
 
-func (page *BufferedPage) render() (string, error) {
+func (page *PageHTML) html() (string, error) {
 	page.actions = make(map[string][]Action)
 	page.countID = 0
 
@@ -121,7 +119,7 @@ func (page *BufferedPage) render() (string, error) {
 	}
 
 	if page.drawer != nil {
-		page.drawer.Draw(page)
+		page.drawer.Render(page)
 	}
 
 	if page.evt == "update" {
