@@ -7,6 +7,11 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+type Options struct {
+	Title string
+	Modal bool
+}
+
 type Page interface {
 	Title() string
 	SetTitle(title string)
@@ -28,34 +33,37 @@ type PageDrawer interface {
 
 type BufferedPage struct {
 	buffer  bytes.Buffer
+	options Options
 	title   string
 	countID int
 	exit    bool
 	evt     string
 	session *Session
 	drawer  PageDrawer
-	modal   bool
 	actions map[string][]Action
 }
 
-func newPage(title string, session *Session, modal bool, drawer PageDrawer) *BufferedPage {
+func newPage(session *Session, drawer PageDrawer, options Options) *BufferedPage {
 	page := &BufferedPage{
-		title:   title,
+		options: options,
 		countID: 1000,
 		evt:     "new",
 		session: session,
-		modal:   modal,
 		drawer:  drawer,
 	}
 	return page
 }
 
 func (p *BufferedPage) Title() string {
-	return p.title
+	return p.options.Title
 }
 
 func (p *BufferedPage) SetTitle(title string) {
-	p.title = title
+	p.options.Title = title
+}
+
+func (p *BufferedPage) Modal() bool {
+	return p.options.Modal
 }
 
 func (p *BufferedPage) Draw(r PageDrawer) {

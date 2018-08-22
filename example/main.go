@@ -54,7 +54,7 @@ func tab1(page ihui.Page) {
 func tab2(page ihui.Page) {
 	page.WriteString(`<p>Hello Tab 2</p>`)
 	page.Draw(newButton("go page 1", func(session *ihui.Session, value interface{}) {
-		session.ShowPage("Page 1", true, ihui.PageDrawerFunc(page1))
+		session.ShowPage(ihui.PageDrawerFunc(page1), &ihui.Options{Title: "Page 1", Modal: true})
 	}))
 }
 
@@ -64,7 +64,7 @@ func start(session *ihui.Session) {
 	menu.Add("Tab1", ihui.PageDrawerFunc(tab1))
 	menu.Add("Tab2", ihui.PageDrawerFunc(tab2))
 
-	if err := session.ShowPage("Exemple", false, menu); err != nil {
+	if err := session.ShowPage(menu, &ihui.Options{Title: "Example"}); err != nil {
 		log.Print(err)
 	}
 }

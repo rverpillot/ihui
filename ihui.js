@@ -48,7 +48,10 @@ $(document).ready(function () {
 
         switch (msg.Name) { 
             case "new":
-                document.title = msg.Data.title
+                if (msg.Data.title != "") {
+                    document.title = msg.Data.title
+                }
+                
                 $("body > #main").html(msg.Data.html)
                 sendMsg(null, "load", "page", null)
                 break

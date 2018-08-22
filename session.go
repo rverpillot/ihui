@@ -25,14 +25,17 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
-func (s *Session) ShowPage(title string, modal bool, drawer PageDrawer) error {
+func (s *Session) ShowPage(drawer PageDrawer, options *Options) error {
+	if options == nil {
+		options = &Options{}
+	}
 	if s.page == nil {
-		modal = true
+		options.Modal = true
 	}
 
-	page := newPage(title, s, modal, drawer)
+	page := newPage(s, drawer, *options)
 
-	if !modal {
+	if !page.Modal() {
 		s.page = page
 		return nil
 	}
@@ -69,7 +72,7 @@ func (s *Session) ShowPage(title string, modal bool, drawer PageDrawer) error {
 		}
 
 		if page != s.page {
-			if !s.page.modal {
+			if !s.page.Modal() {
 				page = s.page
 			}
 			page.evt = "new"
