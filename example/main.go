@@ -29,7 +29,7 @@ func (b *Button) Draw(page ihui.Page) {
 	page.WriteString(html)
 	sel := "[id=" + b.id + "]"
 	page.On("click", sel, func(session *ihui.Session, event ihui.Event) {
-		log.Printf("click button! %s", event.Id)
+		log.Printf("click button! %s", event.Source)
 	})
 	page.On("click", sel, b.action)
 }

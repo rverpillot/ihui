@@ -100,7 +100,7 @@ func (p *BufferedPage) On(name string, selector string, action ActionFunc) {
 
 func (p *BufferedPage) Trigger(event Event) int {
 	count := 0
-	actions, ok := p.actions[event.Source]
+	actions, ok := p.actions[event.Target]
 	if ok {
 		for _, action := range actions {
 			action.Fct(p.session, event)
@@ -133,13 +133,13 @@ func (page *BufferedPage) render() (string, error) {
 		return "", err
 	}
 
-	addAction := func(s *goquery.Selection, name string, source string, value string) string {
-		id := s.AttrOr("data-id", s.AttrOr("id", ""))
+	addAction := func(s *goquery.Selection, name string, target string, value string) string {
+		source := s.AttrOr("data-id", s.AttrOr("id", ""))
 		attr := "_" + name + "_id"
-		source = s.AttrOr(attr, source)
-		s.SetAttr(attr, source)
-		s.SetAttr(name, fmt.Sprintf(`_s(event,"%s","%s","%s",%s);`, name, source, id, value))
-		return source
+		target = s.AttrOr(attr, target)
+		s.SetAttr(attr, target)
+		s.SetAttr(name, fmt.Sprintf(`_s(event,"%s","%s","%s",%s);`, name, source, target, value))
+		return target
 	}
 
 	removeAllAttrs := func(doc *goquery.Document, names ...string) {
@@ -203,7 +203,7 @@ func (page *BufferedPage) render() (string, error) {
 		})
 	}
 
-	removeAllAttrs(doc, "_onclick_id", "_onchange_id", "_oninput_id", "_onsubmit_id")
+	removeAllAttrs(doc, "_onclick_id", "_onchange_id", "_oninput_id", "_onsubmit_id", "oncheck_id")
 
 	return doc.Html()
 }
