@@ -3,15 +3,15 @@ var morphdom = require('morphdom')
 
 var ws
 
-global.sendMsg = function (event, name, source, data) {
+global.sendMsg = function (event, name, source, id, data) {
     if (event) {
         event.preventDefault()
     }
-    var msg = JSON.stringify({ name: name, source: source, data: data })
+    var msg = JSON.stringify({ name: name, id: id, source: source, data: data })
     ws.send(msg)
 }
-global._s = function(event, source, data) {
-    sendMsg(event, "action", source, data)
+global._s = function(event, name, source, id, data) {
+    sendMsg(event, name, source, id, data)
 }
 
 

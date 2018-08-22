@@ -66,7 +66,7 @@ func (s *Session) ShowPage(drawer PageDrawer, options *Options) error {
 				return err
 			}
 
-			if page.Trigger(event.Source, event.Data) > 0 {
+			if page.Trigger(*event) > 0 {
 				break
 			}
 		}

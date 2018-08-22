@@ -15,11 +15,16 @@ import (
 
 type Event struct {
 	Name   string
+	Id     string
 	Source string
 	Data   interface{}
 }
 
-type ActionFunc func(*Session, interface{})
+func (e *Event) Value() string {
+	return e.Data.(string)
+}
+
+type ActionFunc func(*Session, Event)
 
 func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
 
