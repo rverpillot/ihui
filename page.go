@@ -47,7 +47,6 @@ func newHTMLPage(session *Session, options Options) *PageHTML {
 		countID: 1000,
 		evt:     "new",
 		session: session,
-		actions: make(map[string][]Action),
 	}
 	return page
 }
@@ -76,6 +75,9 @@ func (p *PageHTML) Add(selector string, render PageRenderer) error {
 	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
 		s.SetHtml(html)
 	})
+	p.buffer.Reset()
+	html, _ = doc.Find("body").Html()
+	p.buffer.WriteString(html)
 	return nil
 }
 
@@ -124,6 +126,7 @@ func (p *PageHTML) Script(script string, args ...interface{}) error {
 }
 
 func (page *PageHTML) html(drawer PageRenderer) (string, error) {
+	page.actions = make(map[string][]Action)
 	page.buffer.Reset()
 
 	if drawer != nil {

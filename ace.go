@@ -2,7 +2,6 @@ package ihui
 
 import (
 	"html/template"
-	"log"
 
 	"github.com/yosssi/ace"
 )
@@ -12,13 +11,14 @@ type PageAce struct {
 	model    interface{}
 }
 
-func NewPageAce(content []byte, model interface{}) *PageAce {
-	options := ace.InitializeOptions(nil)
-	options.Asset = func(name string) ([]byte, error) {
-		return content, nil
+func NewPageAce(filename string, content []byte, model interface{}) *PageAce {
+	options := new(ace.Options)
+	if len(content) > 0 {
+		options.Asset = func(name string) ([]byte, error) {
+			return content, nil
+		}
 	}
-
-	t, err := ace.Load("content", "", options)
+	t, err := ace.Load(filename, "", options)
 	if err != nil {
 		panic(err)
 	}
@@ -35,6 +35,6 @@ func (p *PageAce) SetModel(model interface{}) {
 func (p *PageAce) Render(page Page) {
 	err := p.template.Execute(page, p.model)
 	if err != nil {
-		log.Print(err)
+		panic(err)
 	}
 }

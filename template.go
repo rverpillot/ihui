@@ -10,8 +10,8 @@ type PageTemplate struct {
 	model    interface{}
 }
 
-func NewPageTemplate(tmpl string, model interface{}) *PageTemplate {
-	t, err := template.New("webpage").Parse(tmpl)
+func NewPageTemplate(filename string, tmpl string, model interface{}) *PageTemplate {
+	t, err := template.New(filename).Parse(tmpl)
 	if err != nil {
 		log.Print(err)
 		return nil
@@ -29,6 +29,6 @@ func (p *PageTemplate) SetModel(model interface{}) {
 func (p *PageTemplate) Render(page Page) {
 	err := p.template.Execute(page, p.model)
 	if err != nil {
-		log.Print(err)
+		panic(err)
 	}
 }
