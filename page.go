@@ -102,7 +102,6 @@ func (p *PageHTML) On(name string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
-	//TODO: à revoir
 	id := selector
 	if id != "page" {
 		id = p.UniqueId("a")
@@ -115,8 +114,7 @@ func (p *PageHTML) Trigger(event Event) int {
 	actions, ok := p.actions[event.Target]
 	if ok {
 		for _, action := range actions {
-			//TODO: à revoir
-			if event.Target == "page" && action.Name != event.Name {
+			if action.Name != event.Name {
 				continue
 			}
 			action.Fct(p.session, event)
@@ -145,10 +143,10 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 
 	addAction := func(s *goquery.Selection, name string, target string, value string) string {
 		source := s.AttrOr("data-id", s.AttrOr("id", ""))
-		attr := "_" + name + "_id"
+		attr := "_action_id"
 		target = s.AttrOr(attr, target)
 		s.SetAttr(attr, target)
-		s.SetAttr(name, fmt.Sprintf(`_s(event,"%s","%s","%s",%s);`, name, source, target, value))
+		s.SetAttr("on"+name, fmt.Sprintf(`_s(event,"%s","%s","%s",%s);`, name, source, target, value))
 		return target
 	}
 
@@ -173,26 +171,26 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 			switch action.Name {
 			case "click":
 				value := s.AttrOr("data-value", s.AttrOr("data-id", s.AttrOr("id", "")))
-				_id = addAction(s, "onclick", id, `"`+value+`"`)
+				_id = addAction(s, "click", id, `"`+value+`"`)
 				if goquery.NodeName(s) == "a" {
 					s.SetAttr("href", "")
 				}
 
 			case "check":
-				_id = addAction(s, "onchange", id, `$(this).prop("checked")`)
+				_id = addAction(s, "change", id, `$(this).prop("checked")`)
 
 			case "change":
-				_id = addAction(s, "onchange", id, `$(this).val()`)
+				_id = addAction(s, "change", id, `$(this).val()`)
 
 			case "input":
-				_id = addAction(s, "oninput", id, `$(this).val()`)
+				_id = addAction(s, "input", id, `$(this).val()`)
 
 			case "submit":
-				_id = addAction(s, "onsubmit", id, `$(this).serializeObject()`)
+				_id = addAction(s, "submit", id, `$(this).serializeObject()`)
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					_id = addAction(ss, "onchange", id, `{ name: $(this).attr("name"), val: $(this).val() }`)
+					_id = addAction(ss, "change", id, `{ name: $(this).attr("name"), val: $(this).val() }`)
 				})
 			}
 			if _id != id {
@@ -201,7 +199,7 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 		})
 	}
 
-	removeAllAttrs(doc, "_onclick_id", "_onchange_id", "_oninput_id", "_onsubmit_id", "oncheck_id")
+	removeAllAttrs(doc, "_action_id")
 
 	return doc.Find("body").Html()
 }
