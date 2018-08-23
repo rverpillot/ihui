@@ -35,7 +35,7 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 		options.Modal = true
 	}
 
-	page := newHTMLPage(s, drawer, *options)
+	page := newHTMLPage(s, *options)
 
 	if !page.Modal() {
 		s.page = page
@@ -45,9 +45,13 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 	for !page.exit {
 		s.page = page
 
-		html, err := page.html()
+		html, err := page.html(drawer)
 		if err != nil {
 			return err
+		}
+
+		if page.evt == "update" {
+			html = fmt.Sprintf(`<div id="main">%s</div>`, html) // because morphdom processing
 		}
 
 		event := &Event{

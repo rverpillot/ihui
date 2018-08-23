@@ -51,7 +51,7 @@ func (menu *Menu) Render(page ihui.Page) {
 			style = ""
 		}
 		page.WriteString(fmt.Sprintf(`<div id="%s" style="%s">`, name, style))
-		page.Draw(menu.pages[name])
+		menu.pages[name].Render(page)
 		page.WriteString(`</div>`)
 	}
 }

@@ -13,9 +13,9 @@ type Options struct {
 }
 
 type Page interface {
-	Draw(r PageRenderer)
 	WriteString(html string)
 	Write(data []byte) (int, error)
+	Add(string, PageRenderer) error
 	UniqueId(string) string
 	Get(string) interface{}
 	On(id string, name string, action ActionFunc)
@@ -38,17 +38,16 @@ type PageHTML struct {
 	exit    bool
 	evt     string
 	session *Session
-	drawer  PageRenderer
 	actions map[string][]Action
 }
 
-func newHTMLPage(session *Session, drawer PageRenderer, options Options) *PageHTML {
+func newHTMLPage(session *Session, options Options) *PageHTML {
 	page := &PageHTML{
 		options: options,
 		countID: 1000,
 		evt:     "new",
 		session: session,
-		drawer:  drawer,
+		actions: make(map[string][]Action),
 	}
 	return page
 }
@@ -65,8 +64,19 @@ func (p *PageHTML) Modal() bool {
 	return p.options.Modal
 }
 
-func (p *PageHTML) Draw(r PageRenderer) {
-	r.Render(p)
+func (p *PageHTML) Add(selector string, render PageRenderer) error {
+	doc, err := goquery.NewDocumentFromReader(&p.buffer)
+	if err != nil {
+		return err
+	}
+	html, err := p.html(render)
+	if err != nil {
+		return err
+	}
+	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
+		s.SetHtml(html)
+	})
+	return nil
 }
 
 func (p *PageHTML) WriteString(html string) {
@@ -113,22 +123,11 @@ func (p *PageHTML) Script(script string, args ...interface{}) error {
 	return p.session.Script(script, args...)
 }
 
-func (page *PageHTML) html() (string, error) {
-	page.actions = make(map[string][]Action)
-	page.countID = 0
-
+func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 	page.buffer.Reset()
 
-	if page.evt == "update" {
-		page.buffer.WriteString(`<div id="main">`) // because morphdom processing
-	}
-
-	if page.drawer != nil {
-		page.drawer.Render(page)
-	}
-
-	if page.evt == "update" {
-		page.buffer.WriteString(`</div>`)
+	if drawer != nil {
+		drawer.Render(page)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
@@ -152,19 +151,6 @@ func (page *PageHTML) html() (string, error) {
 			})
 		}
 	}
-
-	/*
-		doc.Find("[onclick]").Each(func(i int, s *goquery.Selection) {
-			attr, _ := s.Attr("onclick")
-			if attr[0] == '#' {
-				val := s.AttrOr("data-value", s.AttrOr("data-id", s.AttrOr("id", "")))
-				s.SetAttr("onclick", fmt.Sprintf(`_s(even,"%s",%s)`, attr, `"`+val+`"`))
-				if goquery.NodeName(s) == "a" {
-					s.SetAttr("href", "")
-				}
-			}
-		})
-	*/
 
 	for id, actions := range page.actions {
 		action := actions[0]
@@ -208,5 +194,5 @@ func (page *PageHTML) html() (string, error) {
 
 	removeAllAttrs(doc, "_onclick_id", "_onchange_id", "_oninput_id", "_onsubmit_id", "oncheck_id")
 
-	return doc.Html()
+	return doc.Find("body").Html()
 }

@@ -37,10 +37,11 @@ func (b *Button) Render(page ihui.Page) {
 // Pages
 func page1(page ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
-	page.Draw(newButton("Exit", func(session *ihui.Session, _ ihui.Event) {
+	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) {
 		log.Println("close!")
 		session.QuitPage()
-	}))
+	})
+	button.Render(page)
 
 	page.On("load", "page", func(s *ihui.Session, _ ihui.Event) {
 		log.Println("page1 loaded!")
@@ -53,9 +54,10 @@ func tab1(page ihui.Page) {
 
 func tab2(page ihui.Page) {
 	page.WriteString(`<p>Hello Tab 2</p>`)
-	page.Draw(newButton("go page 1", func(session *ihui.Session, event ihui.Event) {
+	button := newButton("go page 1", func(session *ihui.Session, event ihui.Event) {
 		session.ShowPage(ihui.PageRendererFunc(page1), &ihui.Options{Title: "Page 1", Modal: true})
-	}))
+	})
+	button.Render(page)
 }
 
 // Init
