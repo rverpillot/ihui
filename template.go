@@ -7,10 +7,10 @@ import (
 
 type PageTemplate struct {
 	template *template.Template
-	data     interface{}
+	model    interface{}
 }
 
-func NewPageTemplate(tmpl string, data interface{}) *PageTemplate {
+func NewPageTemplate(tmpl string, model interface{}) *PageTemplate {
 	t, err := template.New("webpage").Parse(tmpl)
 	if err != nil {
 		log.Print(err)
@@ -18,12 +18,16 @@ func NewPageTemplate(tmpl string, data interface{}) *PageTemplate {
 	}
 	return &PageTemplate{
 		template: t,
-		data:     data,
+		model:    model,
 	}
 }
 
-func (ptr *PageTemplate) Render(page Page) {
-	err := ptr.template.Execute(page, ptr.data)
+func (p *PageTemplate) SetModel(model interface{}) {
+	p.model = model
+}
+
+func (p *PageTemplate) Render(page Page) {
+	err := p.template.Execute(page, p.model)
 	if err != nil {
 		log.Print(err)
 	}

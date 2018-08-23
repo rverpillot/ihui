@@ -19,6 +19,7 @@ type Page interface {
 	UniqueId(string) string
 	Get(string) interface{}
 	On(id string, name string, action ActionFunc)
+	Script(string, ...interface{}) error
 }
 
 type PageRendererFunc func(Page)
@@ -90,7 +91,7 @@ func (p *PageHTML) On(name string, selector string, action ActionFunc) {
 		return
 	}
 	id := selector
-	if name != "load" {
+	if id != "page" {
 		id = p.UniqueId("a")
 	}
 	p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
@@ -106,6 +107,10 @@ func (p *PageHTML) Trigger(event Event) int {
 		}
 	}
 	return count
+}
+
+func (p *PageHTML) Script(script string, args ...interface{}) error {
+	return p.session.Script(script, args...)
 }
 
 func (page *PageHTML) html() (string, error) {

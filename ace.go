@@ -9,10 +9,10 @@ import (
 
 type PageAce struct {
 	template *template.Template
-	data     interface{}
+	model    interface{}
 }
 
-func NewPageAce(content []byte, data interface{}) *PageAce {
+func NewPageAce(content []byte, model interface{}) *PageAce {
 	options := ace.InitializeOptions(nil)
 	options.Asset = func(name string) ([]byte, error) {
 		return content, nil
@@ -24,12 +24,16 @@ func NewPageAce(content []byte, data interface{}) *PageAce {
 	}
 	return &PageAce{
 		template: t,
-		data:     data,
+		model:    model,
 	}
 }
 
-func (ptr *PageAce) Render(page Page) {
-	err := ptr.template.Execute(page, ptr.data)
+func (p *PageAce) SetModel(model interface{}) {
+	p.model = model
+}
+
+func (p *PageAce) Render(page Page) {
+	err := p.template.Execute(page, p.model)
 	if err != nil {
 		log.Print(err)
 	}
