@@ -72,6 +72,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if ext == ".css" {
 			filename = path.Join("css", path.Base(r.URL.Path))
 		}
+
 		content, err := Asset(filename)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
