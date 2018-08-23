@@ -102,6 +102,7 @@ func (p *PageHTML) On(name string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
+	//TODO: à revoir
 	id := selector
 	if id != "page" {
 		id = p.UniqueId("a")
@@ -114,6 +115,10 @@ func (p *PageHTML) Trigger(event Event) int {
 	actions, ok := p.actions[event.Target]
 	if ok {
 		for _, action := range actions {
+			//TODO: à revoir
+			if event.Target == "page" && action.Name != event.Name {
+				continue
+			}
 			action.Fct(p.session, event)
 			count++
 		}
@@ -167,7 +172,8 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 
 			switch action.Name {
 			case "click":
-				_id = addAction(s, "onclick", id, `""`)
+				value := s.AttrOr("data-value", s.AttrOr("data-id", s.AttrOr("id", "")))
+				_id = addAction(s, "onclick", id, `"`+value+`"`)
 				if goquery.NodeName(s) == "a" {
 					s.SetAttr("href", "")
 				}
