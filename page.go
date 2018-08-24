@@ -124,7 +124,8 @@ func (p *PageHTML) Trigger(event Event) int {
 			count++
 		}
 	}
-	if event.Name == "load" {
+	//TODO: return true to update page
+	if event.Name == "load" || event.Name == "updated" {
 		count = 0
 	}
 	return count

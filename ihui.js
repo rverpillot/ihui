@@ -55,6 +55,7 @@ function start() {
             case "update":
                 updateHTML($("body > #main"), msg.Data.html)
                 $(document).trigger("page")
+                trigger(null, "updated", "page", "page", null)
                 break
 
             case "script":
