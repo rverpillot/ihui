@@ -51,11 +51,13 @@ $(document).ready(function () {
         switch (msg.Name) {
             case "new":
                 $("body > #main").html(msg.Data.html)
+                $(document).trigger("page-new")
                 trigger(null, "load", "page", "page", null)
                 break
 
             case "update":
                 updateHTML($("body > #main"), msg.Data.html)
+                $(document).trigger("page-update")
                 break
 
             case "script":
