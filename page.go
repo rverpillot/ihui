@@ -191,17 +191,19 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 				_id = addAction(s, "onchange", action.Name, id, `$(this).prop("checked")`)
 
 			case "change":
-				_id = addAction(s, "change", action.Name, id, `$(this).val()`)
+				_id = addAction(s, "onchange", action.Name, id, `$(this).val()`)
 
 			case "input":
-				_id = addAction(s, "input", action.Name, id, `$(this).val()`)
+				_id = addAction(s, "oninput", action.Name, id, `$(this).val()`)
 
 			case "submit":
-				_id = addAction(s, "submit", action.Name, id, `$(this).serializeObject()`)
+				_id = addAction(s, "onsubmit", action.Name, id, `$(this).serializeObject()`)
+				s.SetAttr("method", "post")
+				s.SetAttr("action", "")
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					_id = addAction(ss, "change", action.Name, id, `{ name: $(this).attr("name"), val: $(this).val() }`)
+					_id = addAction(ss, "onchange", action.Name, id, `{ name: $(this).attr("name"), val: $(this).val() }`)
 				})
 			}
 			if _id != id {

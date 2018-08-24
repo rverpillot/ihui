@@ -10,8 +10,6 @@ global.trigger = function (event, name, source, target, data) {
     var msg = JSON.stringify({ name: name, source: source, target: target, data: data })
     ws.send(msg)
 }
-global.sendMsg = global.trigger
-
 
 function updateHTML(page, html) {
     morphdom(page[0], html, {
@@ -23,11 +21,10 @@ function updateHTML(page, html) {
         },
         childrenOnly: true
     })
-
+    
 }
 
-
-$(document).ready(function () {
+function start() {
     var protocol = "ws://"
     if (window.location.protocol == "https:") {
         protocol = "wss://"
@@ -57,7 +54,7 @@ $(document).ready(function () {
 
             case "update":
                 updateHTML($("body > #main"), msg.Data.html)
-                $(document).trigger("page-update")
+                $(document).trigger("page")
                 break
 
             case "script":
@@ -73,5 +70,9 @@ $(document).ready(function () {
         console.log("Connection closed.")
         location.reload()
     }
+}
 
-});
+$(window).on("load", function () { 
+    start(); 
+})
+

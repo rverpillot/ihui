@@ -2,6 +2,7 @@ package ihui
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gorilla/websocket"
 )
@@ -47,6 +48,7 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 
 		html, err := page.Render(drawer)
 		if err != nil {
+			log.Print(err)
 			return err
 		}
 
@@ -63,12 +65,14 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 		}
 		err = s.sendEvent(event)
 		if err != nil {
+			log.Print(err)
 			return err
 		}
 
 		for {
 			event, err = s.recvEvent()
 			if err != nil {
+				log.Print(err)
 				return err
 			}
 
