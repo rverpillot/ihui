@@ -17,6 +17,8 @@ type Page interface {
 	Write(data []byte) (int, error)
 	Add(string, PageRenderer) error
 	UniqueId(string) string
+	SetTitle(string)
+	Session() *Session
 	Get(string) interface{}
 	On(id string, name string, action ActionFunc)
 	Script(string, ...interface{}) error
@@ -36,7 +38,6 @@ type PageHTML struct {
 	title   string
 	countID int
 	exit    bool
-	evt     string
 	session *Session
 	actions map[string][]Action
 }
@@ -45,7 +46,6 @@ func newHTMLPage(session *Session, options Options) *PageHTML {
 	page := &PageHTML{
 		options: options,
 		countID: 1000,
-		evt:     "new",
 		session: session,
 	}
 	return page
@@ -57,6 +57,10 @@ func (p *PageHTML) Title() string {
 
 func (p *PageHTML) SetTitle(title string) {
 	p.options.Title = title
+}
+
+func (p *PageHTML) Session() *Session {
+	return p.session
 }
 
 func (p *PageHTML) Modal() bool {
@@ -86,7 +90,7 @@ func (p *PageHTML) WriteString(html string) {
 }
 
 func (p *PageHTML) Write(data []byte) (int, error) {
-	return p.buffer.Write(data)
+	return p.buffer.WriteString(string(data))
 }
 
 func (p *PageHTML) UniqueId(prefix string) string {
@@ -121,6 +125,9 @@ func (p *PageHTML) Trigger(event Event) int {
 			count++
 		}
 	}
+	if event.Name == "load" {
+		count = 0
+	}
 	return count
 }
 
@@ -146,7 +153,7 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 		attr := "_action_id"
 		target = s.AttrOr(attr, target)
 		s.SetAttr(attr, target)
-		s.SetAttr("on"+name, fmt.Sprintf(`_s(event,"%s","%s","%s",%s);`, name, source, target, value))
+		s.SetAttr("on"+name, fmt.Sprintf(`trigger(event,"%s","%s","%s",%s);`, name, source, target, value))
 		return target
 	}
 
@@ -177,7 +184,7 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 				}
 
 			case "check":
-				_id = addAction(s, "change", id, `$(this).prop("checked")`)
+				_id = addAction(s, "change", id, `$(this).prop("checked")=="checked"`)
 
 			case "change":
 				_id = addAction(s, "change", id, `$(this).val()`)

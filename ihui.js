@@ -3,14 +3,14 @@ var morphdom = require('morphdom')
 
 var ws
 
-global.sendMsg = function (event, name, source, target, data) {
+global.trigger = function (event, name, source, target, data) {
     if (event) {
         event.preventDefault()
     }
     var msg = JSON.stringify({ name: name, source: source, target: target, data: data })
     ws.send(msg)
 }
-global._s = global.sendMsg
+global.sendMsg = global.trigger
 
 
 function updateHTML(page, html) {
@@ -51,7 +51,7 @@ $(document).ready(function () {
                 }
                 
                 $("body > #main").html(msg.Data.html)
-                sendMsg(null, "load", "page", "page", null)
+                trigger(null, "load", "page", "page", null)
                 break
 
             case "update":
@@ -62,7 +62,7 @@ $(document).ready(function () {
             case "script":
                 // console.log(msg.Data)
                 jQuery.globalEval(msg.Data)
-                sendMsg(null, "script", "global", "ok")
+                trigger(null, "script", "global", "ok")
                 break
         }
 

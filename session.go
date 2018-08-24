@@ -42,7 +42,7 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 		return nil
 	}
 
-	for !page.exit {
+	for evt := "new"; !page.exit; {
 		s.page = page
 
 		html, err := page.html(drawer)
@@ -50,12 +50,12 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 			return err
 		}
 
-		if page.evt == "update" {
-			html = fmt.Sprintf(`<div id="main">%s</div>`, html) // because morphdom processing
+		if evt == "update" {
+			html = fmt.Sprintf(`<div id="main">%s</div>`, html) // morphdom
 		}
 
 		event := &Event{
-			Name: page.evt,
+			Name: evt,
 			Data: map[string]interface{}{
 				"title": page.Title(),
 				"html":  html,
@@ -81,11 +81,12 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 			if !s.page.Modal() {
 				page = s.page
 			}
-			page.evt = "new"
+			evt = "new"
 		} else {
-			page.evt = "update"
+			evt = "update"
 		}
 	}
+	page.Trigger(Event{Name: "unload", Source: "page", Target: "page"})
 	return nil
 }
 
