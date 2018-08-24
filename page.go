@@ -45,7 +45,6 @@ type PageHTML struct {
 func newHTMLPage(session *Session, options Options) *PageHTML {
 	page := &PageHTML{
 		options: options,
-		countID: 1000,
 		session: session,
 	}
 	return page
@@ -135,8 +134,13 @@ func (p *PageHTML) Script(script string, args ...interface{}) error {
 	return p.session.Script(script, args...)
 }
 
+func (p *PageHTML) Render(drawer PageRenderer) (string, error) {
+	p.actions = make(map[string][]Action)
+	p.countID = 1000
+	return p.html(drawer)
+}
+
 func (page *PageHTML) html(drawer PageRenderer) (string, error) {
-	page.actions = make(map[string][]Action)
 	page.buffer.Reset()
 
 	if drawer != nil {

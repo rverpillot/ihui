@@ -45,7 +45,7 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 	for evt := "new"; !page.exit; {
 		s.page = page
 
-		html, err := page.html(drawer)
+		html, err := page.Render(drawer)
 		if err != nil {
 			return err
 		}
