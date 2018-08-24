@@ -44,18 +44,17 @@ $(document).ready(function () {
         console.log(msg)
         var body = $(document.body)
 
-        switch (msg.Name) { 
+        if (msg.Data.title && msg.Data.title != "") {
+            document.title = msg.Data.title
+        }
+
+        switch (msg.Name) {
             case "new":
-                if (msg.Data.title != "") {
-                    document.title = msg.Data.title
-                }
-                
                 $("body > #main").html(msg.Data.html)
                 trigger(null, "load", "page", "page", null)
                 break
 
             case "update":
-                document.title = msg.Data.title
                 updateHTML($("body > #main"), msg.Data.html)
                 break
 
