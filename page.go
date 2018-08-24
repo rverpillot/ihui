@@ -152,12 +152,12 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 		return "", err
 	}
 
-	addAction := func(s *goquery.Selection, name string, target string, value string) string {
+	addAction := func(s *goquery.Selection, name string, evname string, target string, value string) string {
 		source := s.AttrOr("data-id", s.AttrOr("id", ""))
 		attr := "_action_id"
 		target = s.AttrOr(attr, target)
 		s.SetAttr(attr, target)
-		s.SetAttr("on"+name, fmt.Sprintf(`trigger(event,"%s","%s","%s",%s);`, name, source, target, value))
+		s.SetAttr(name, fmt.Sprintf(`trigger(event,"%s","%s","%s",%s);`, evname, source, target, value))
 		return target
 	}
 
@@ -182,26 +182,26 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 			switch action.Name {
 			case "click":
 				value := s.AttrOr("data-value", s.AttrOr("data-id", s.AttrOr("id", "")))
-				_id = addAction(s, "click", id, `"`+value+`"`)
+				_id = addAction(s, "onclick", action.Name, id, `"`+value+`"`)
 				if goquery.NodeName(s) == "a" {
 					s.SetAttr("href", "")
 				}
 
 			case "check":
-				_id = addAction(s, "change", id, `$(this).prop("checked")=="checked"`)
+				_id = addAction(s, "onchange", action.Name, id, `$(this).prop("checked")`)
 
 			case "change":
-				_id = addAction(s, "change", id, `$(this).val()`)
+				_id = addAction(s, "change", action.Name, id, `$(this).val()`)
 
 			case "input":
-				_id = addAction(s, "input", id, `$(this).val()`)
+				_id = addAction(s, "input", action.Name, id, `$(this).val()`)
 
 			case "submit":
-				_id = addAction(s, "submit", id, `$(this).serializeObject()`)
+				_id = addAction(s, "submit", action.Name, id, `$(this).serializeObject()`)
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					_id = addAction(ss, "change", id, `{ name: $(this).attr("name"), val: $(this).val() }`)
+					_id = addAction(ss, "change", action.Name, id, `{ name: $(this).attr("name"), val: $(this).val() }`)
 				})
 			}
 			if _id != id {
