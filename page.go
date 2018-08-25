@@ -33,17 +33,22 @@ type PageRenderer interface {
 }
 
 type PageHTML struct {
+	Name    string
+	drawer  PageRenderer
 	buffer  bytes.Buffer
 	options Options
 	title   string
 	countID int
 	exit    bool
+	evt     string
 	session *Session
 	actions map[string][]Action
 }
 
-func newHTMLPage(session *Session, options Options) *PageHTML {
+func newHTMLPage(name string, drawer PageRenderer, session *Session, options Options) *PageHTML {
 	page := &PageHTML{
+		Name:    name,
+		drawer:  drawer,
 		options: options,
 		session: session,
 	}
@@ -125,7 +130,7 @@ func (p *PageHTML) Trigger(event Event) int {
 		}
 	}
 	//TODO: return true to update page
-	if event.Name == "load" || event.Name == "updated" {
+	if event.Name == "create" || event.Name == "update" {
 		count = 0
 	}
 	return count
@@ -135,10 +140,10 @@ func (p *PageHTML) Script(script string, args ...interface{}) error {
 	return p.session.Script(script, args...)
 }
 
-func (p *PageHTML) Render(drawer PageRenderer) (string, error) {
+func (p *PageHTML) Render() (string, error) {
 	p.actions = make(map[string][]Action)
 	p.countID = 1000
-	return p.html(drawer)
+	return p.html(p.drawer)
 }
 
 func (page *PageHTML) html(drawer PageRenderer) (string, error) {

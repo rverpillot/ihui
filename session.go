@@ -28,7 +28,7 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
-func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
+func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) error {
 	if options == nil {
 		options = &Options{}
 	}
@@ -36,29 +36,27 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 		options.Modal = true
 	}
 
-	page := newHTMLPage(s, *options)
-
+	page := newHTMLPage(name, drawer, s, *options)
 	if !page.Modal() {
 		s.page = page
 		return nil
 	}
 
-	for evt := "new"; !page.exit; {
+	for !page.exit {
 		s.page = page
 
-		html, err := page.Render(drawer)
+		html, err := page.Render()
 		if err != nil {
 			log.Print(err)
 			return err
 		}
 
-		if evt == "update" {
-			html = fmt.Sprintf(`<div id="main">%s</div>`, html) // morphdom
-		}
+		html = fmt.Sprintf(`<div id="%s" class="page">%s</div>`, page.Name, html)
 
 		event := &Event{
-			Name: evt,
+			Name: "page",
 			Data: map[string]interface{}{
+				"name":  page.Name,
 				"title": page.Title(),
 				"html":  html,
 			},
@@ -85,12 +83,8 @@ func (s *Session) ShowPage(drawer PageRenderer, options *Options) error {
 			if !s.page.Modal() {
 				page = s.page
 			}
-			evt = "new"
-		} else {
-			evt = "update"
 		}
 	}
-	page.Trigger(Event{Name: "unload", Source: "page", Target: "page"})
 	return nil
 }
 

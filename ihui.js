@@ -13,7 +13,7 @@ global.trigger = function (event, name, source, target, data) {
 
 function updateHTML(page, html) {
     morphdom(page[0], html, {
-        onBeforeElChildrenUpdated: function (fromEl, toEl) {
+        onBeforeElUpdated: function (fromEl, toEl) {
             if ($(toEl).hasClass('noupdate')) {
                 return false
             }
@@ -24,12 +24,23 @@ function updateHTML(page, html) {
     
 }
 
+function showPage(name) {
+    $(".page").each(function(i,e){
+        var page = $(e)
+        if (page.attr("id") == name) {
+            page.show()
+        } else {
+            page.hide()
+        }
+    })
+}
+
 function start() {
     var protocol = "ws://"
     if (window.location.protocol == "https:") {
         protocol = "wss://"
     }
-    addr = protocol + window.location.host + "{{.Path}}/ws"
+    var addr = protocol + window.location.host + "{{.Path}}/ws"
     ws = new WebSocket(addr);
 
     ws.onerror = function(event) {
@@ -46,22 +57,19 @@ function start() {
         }
 
         switch (msg.Name) {
-            case "new":
-                $("body > #main").html(msg.Data.html)
-                $(document).trigger("page-new")
-                trigger(null, "load", "page", "page", null)
-                break
-
-            case "update":
-                updateHTML($("body > #main"), msg.Data.html)
-                $(document).trigger("page")
-                trigger(null, "updated", "page", "page", null)
+            case "page":
+                if ($(".page").is("#" + msg.Data.name)) {
+                    updateHTML($("#"+msg.Data.name), msg.Data.html)
+                } else {
+                    $("#pages").append(msg.Data.html)
+                }
+                showPage(msg.Data.name)
+                $(document).trigger("page-"+msg.Name, msg.Data.name)
+                trigger(null, msg.Name, "page", "page", null)
                 break
 
             case "script":
-                // console.log(msg.Data)
                 jQuery.globalEval(msg.Data)
-                trigger(null, "script", "global", "ok")
                 break
         }
 
