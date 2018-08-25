@@ -1,15 +1,15 @@
-morphdom = require('morphdom')
+
+var morphdom = require('morphdom')
 
 var ws
 
-global.sendMsg = function (event, name, source, data) {
+global.trigger = function (event, name, source, target, data) {
     if (event) {
         event.preventDefault()
     }
-    var msg = JSON.stringify({ name: name, source: source, data: data })
+    var msg = JSON.stringify({ name: name, source: source, target: target, data: data })
     ws.send(msg)
 }
-
 
 function updateHTML(page, html) {
     morphdom(page[0], html, {
@@ -19,32 +19,17 @@ function updateHTML(page, html) {
             }
             return true
         },
-        childrenOnly: true,
-        
-        // onNodeAdded: function(el) {
-        //     if ($(el).attr("data-action")) {
-        //         handleEvents(el)
-        //     }
-        // },
-        // onElUpdated: function(el) {
-        //     if ($(el).attr("data-action")) {
-        //         handleEvents(el)
-        //     }
-        // }
+        childrenOnly: true
     })
-
-//    page.trigger("ihui:display", page)
+    
 }
 
-var currentPage = null
-
-
-$(document).ready(function () {
+function start() {
     var protocol = "ws://"
     if (window.location.protocol == "https:") {
         protocol = "wss://"
     }
-    addr = protocol + window.location.host + window.location.pathname + "ws"
+    addr = protocol + window.location.host + "{{.Path}}/ws"
     ws = new WebSocket(addr);
 
     ws.onerror = function(event) {
@@ -56,21 +41,27 @@ $(document).ready(function () {
         console.log(msg)
         var body = $(document.body)
 
-        switch (msg.Name) { 
+        if (msg.Data.title && msg.Data.title != "") {
+            document.title = msg.Data.title
+        }
+
+        switch (msg.Name) {
             case "new":
-                document.title = msg.Data.title
                 $("body > #main").html(msg.Data.html)
+                $(document).trigger("page-new")
+                trigger(null, "load", "page", "page", null)
                 break
 
             case "update":
-                document.title = msg.Data.title
                 updateHTML($("body > #main"), msg.Data.html)
+                $(document).trigger("page")
+                trigger(null, "updated", "page", "page", null)
                 break
 
             case "script":
                 // console.log(msg.Data)
                 jQuery.globalEval(msg.Data)
-                sendMsg(null, "script", "global", "ok")
+                trigger(null, "script", "global", "ok")
                 break
         }
 
@@ -80,5 +71,9 @@ $(document).ready(function () {
         console.log("Connection closed.")
         location.reload()
     }
+}
 
-});
+$(window).on("load", function () { 
+    start(); 
+})
+

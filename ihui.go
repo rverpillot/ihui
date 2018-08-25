@@ -2,10 +2,10 @@ package ihui
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
-	"strings"
+	"path"
+	"text/template"
 
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/websocket"
@@ -16,46 +16,41 @@ import (
 type Event struct {
 	Name   string
 	Source string
+	Target string
 	Data   interface{}
 }
 
-type ActionFunc func(*Session)
+func (e *Event) Value() string {
+	return e.Data.(string)
+}
+
+type ActionFunc func(*Session, Event)
 
 func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
 
-type HTTPHandler struct {
-	contextRoot  string
-	index        string
-	assetHandler http.Handler
-	startFunc    ActionFunc
+type Action struct {
+	Selector string
+	Name     string
+	Fct      ActionFunc
 }
 
-func NewHTTPHandler(contextroot string, startFunc ActionFunc) *HTTPHandler {
-	contextroot = strings.TrimSuffix(contextroot, "/")
+type HTTPHandler struct {
+	assetHandler http.Handler
+	startFunc    func(*Session)
+	templ        *template.Template
+	Path         string
+}
 
+func NewHTTPHandler(startFunc func(*Session)) *HTTPHandler {
 	return &HTTPHandler{
-		contextRoot:  contextroot,
 		assetHandler: http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/"}),
 		startFunc:    startFunc,
+		templ:        template.New("main"),
 	}
-}
-
-func (h *HTTPHandler) Path() string {
-	return h.contextRoot
-}
-
-func (h *HTTPHandler) SetIndexPage(index string) {
-	h.index = index
 }
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL.Path)
-	if !strings.HasPrefix(r.URL.Path, h.contextRoot+"/") {
-		http.Redirect(w, r, h.contextRoot+"/", http.StatusTemporaryRedirect)
-		return
-	}
-
-	r.URL.Path = strings.TrimPrefix(r.URL.Path, h.contextRoot)
 
 	if r.Header.Get("Upgrade") == "websocket" {
 		var upgrader = websocket.Upgrader{}
@@ -66,24 +61,39 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		session := newSession(ws)
-		session.Set("path", h.contextRoot)
 		h.startFunc(session)
 
 	} else {
-		if r.URL.Path == "/" {
-			index := h.index
-			if index == "" {
-				index = string(MustAsset("index.html"))
-			}
-			t, err := template.New("main").Parse(index)
-			if err != nil {
-				log.Println(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			t.Execute(w, h)
-		} else {
-			h.assetHandler.ServeHTTP(w, r)
+		filename := "index.html"
+		ext := path.Ext(r.URL.Path)
+		if ext == ".js" {
+			filename = path.Join("js", path.Base(r.URL.Path))
 		}
+		if ext == ".css" {
+			filename = path.Join("css", path.Base(r.URL.Path))
+		}
+
+		content, err := Asset(filename)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		t, err := template.New(filename).Parse(string(content))
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		h.Path = path.Dir(r.URL.Path)
+
+		err = t.Execute(w, h)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 	}
 }

@@ -23,20 +23,29 @@ func newButton(label string, action ihui.ActionFunc) *Button {
 	}
 }
 
-func (b *Button) Draw(page ihui.Page) {
-	b.id = page.UniqueId()
+func (b *Button) Render(page ihui.Page) {
+	b.id = page.UniqueId("id_")
 	html := fmt.Sprintf(`<button id="%s">%s</button>`, b.id, b.label)
 	page.WriteString(html)
-	page.On(b.id, "click", b.action)
+	sel := "[id=" + b.id + "]"
+	page.On("click", sel, func(session *ihui.Session, event ihui.Event) {
+		log.Printf("click button! %s", event.Source)
+	})
+	page.On("click", sel, b.action)
 }
 
 // Pages
 func page1(page ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
-	page.Draw(newButton("Exit", func(session *ihui.Session) {
+	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) {
 		log.Println("close!")
 		session.QuitPage()
-	}))
+	})
+	button.Render(page)
+
+	page.On("load", "page", func(s *ihui.Session, _ ihui.Event) {
+		log.Println("page1 loaded!")
+	})
 }
 
 func tab1(page ihui.Page) {
@@ -45,25 +54,26 @@ func tab1(page ihui.Page) {
 
 func tab2(page ihui.Page) {
 	page.WriteString(`<p>Hello Tab 2</p>`)
-	page.Draw(newButton("go page 1", func(session *ihui.Session) {
-		session.ShowPage("Page 1", ihui.PageDrawerFunc(page1))
-	}))
+	button := newButton("go page 1", func(session *ihui.Session, event ihui.Event) {
+		session.ShowPage(ihui.PageRendererFunc(page1), &ihui.Options{Title: "Page 1", Modal: true})
+	})
+	button.Render(page)
 }
 
 // Init
 func start(session *ihui.Session) {
 	menu := NewMenu()
-	menu.Add("Tab1", ihui.PageDrawerFunc(tab1))
-	menu.Add("Tab2", ihui.PageDrawerFunc(tab2))
+	menu.Add("Tab1", ihui.PageRendererFunc(tab1))
+	menu.Add("Tab2", ihui.PageRendererFunc(tab2))
 
-	if err := session.ShowPage("Exemple", menu); err != nil {
+	if err := session.ShowPage(menu, &ihui.Options{Title: "Example"}); err != nil {
 		log.Print(err)
 	}
 }
 
 func main() {
 
-	h := ihui.NewHTTPHandler("/app", start)
+	h := ihui.NewHTTPHandler(start)
 
 	http.Handle("/", h)
 

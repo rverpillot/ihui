@@ -8,15 +8,15 @@ import (
 
 type Menu struct {
 	names  []string
-	pages  map[string]ihui.PageDrawer
+	pages  map[string]ihui.PageRenderer
 	active string
 }
 
 func NewMenu() *Menu {
-	return &Menu{pages: make(map[string]ihui.PageDrawer)}
+	return &Menu{pages: make(map[string]ihui.PageRenderer)}
 }
 
-func (menu *Menu) Add(name string, r ihui.PageDrawer) {
+func (menu *Menu) Add(name string, r ihui.PageRenderer) {
 	menu.names = append(menu.names, name)
 	menu.pages[name] = r
 	if menu.active == "" {
@@ -30,17 +30,17 @@ func (menu *Menu) SetActive(name string) {
 	}
 }
 
-func (menu *Menu) Draw(page ihui.Page) {
+func (menu *Menu) Render(page ihui.Page) {
 	page.WriteString(`<div id="menu">`)
 	for _, name := range menu.names {
 		if name == menu.active {
 			page.WriteString(fmt.Sprintf(`<div><p>%s</p></div>`, name))
 			continue
 		}
-		id := page.UniqueId()
+		id := page.UniqueId("m")
 		page.WriteString(fmt.Sprintf(`<div><a id="%s">%s</a></div>`, id, name))
 		active := name
-		page.On(id, "click", func(session *ihui.Session) {
+		page.On("click", fmt.Sprintf("[id=%s]", id), func(session *ihui.Session, _ ihui.Event) {
 			menu.SetActive(active)
 		})
 	}
@@ -51,7 +51,7 @@ func (menu *Menu) Draw(page ihui.Page) {
 			style = ""
 		}
 		page.WriteString(fmt.Sprintf(`<div id="%s" style="%s">`, name, style))
-		page.Draw(menu.pages[name])
+		menu.pages[name].Render(page)
 		page.WriteString(`</div>`)
 	}
 }

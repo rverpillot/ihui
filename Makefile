@@ -8,6 +8,6 @@ bindata.go: $(RESOURCES) ihui.js
 	vgo generate	
 
 bin/example: example/*.go bindata.go *.go
-	vgo build -o $@ example/main.go example/menu.go
+	cd example && vgo build -o ../$@ .
 
 
