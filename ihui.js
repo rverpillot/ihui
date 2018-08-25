@@ -52,20 +52,28 @@ function start() {
         console.log(msg)
         var body = $(document.body)
 
-        if (msg.Data.title && msg.Data.title != "") {
-            document.title = msg.Data.title
-        }
-
         switch (msg.Name) {
             case "page":
+                if (msg.Data.title && msg.Data.title != "") {
+                    document.title = msg.Data.title
+                }
+
                 if ($(".page").is("#" + msg.Data.name)) {
                     updateHTML($("#"+msg.Data.name), msg.Data.html)
+                    evt = "update"
                 } else {
                     $("#pages").append(msg.Data.html)
+                    evt = "create"
                 }
                 showPage(msg.Data.name)
-                $(document).trigger("page-"+msg.Name, msg.Data.name)
-                trigger(null, msg.Name, "page", "page", null)
+                $(document).trigger("page-"+evt, msg.Data.name)
+                trigger(null, evt, msg.Data.name, "page", null)
+                trigger(null, "load", msg.Data.name, "page", null)
+                break
+
+            case "remove":
+                $("#"+msg.Target).remove()
+                trigger(null, "unload", msg.Target, "page", null)
                 break
 
             case "script":

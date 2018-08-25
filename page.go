@@ -130,7 +130,7 @@ func (p *PageHTML) Trigger(event Event) int {
 		}
 	}
 	//TODO: return true to update page
-	if event.Name == "create" || event.Name == "update" {
+	if event.Target == "page" {
 		count = 0
 	}
 	return count

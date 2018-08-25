@@ -37,26 +37,20 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) e
 	}
 
 	page := newHTMLPage(name, drawer, s, *options)
-	if !page.Modal() {
-		s.page = page
-		return nil
-	}
 
 	for !page.exit {
-		s.page = page
-
 		html, err := page.Render()
 		if err != nil {
 			log.Print(err)
 			return err
 		}
 
-		html = fmt.Sprintf(`<div id="%s" class="page">%s</div>`, page.Name, html)
+		html = fmt.Sprintf(`<div id="%s" class="page">%s</div>`, name, html)
 
 		event := &Event{
 			Name: "page",
 			Data: map[string]interface{}{
-				"name":  page.Name,
+				"name":  name,
 				"title": page.Title(),
 				"html":  html,
 			},
@@ -67,23 +61,41 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) e
 			return err
 		}
 
-		for {
-			event, err = s.recvEvent()
-			if err != nil {
-				log.Print(err)
-				return err
-			}
+		s.page = page
+		// if !page.options.Modal {
+		// 	return nil
+		// }
 
-			if page.Trigger(*event) > 0 {
-				break
-			}
+		err = s.WaitEvent(page)
+		if err != nil {
+			log.Print(err)
+			return err
+		}
+	}
+	return s.RemovePage(page)
+}
+
+func (s *Session) WaitEvent(page *PageHTML) error {
+	for {
+		event, err := s.recvEvent()
+		if err != nil {
+			return err
 		}
 
-		if page != s.page {
-			if !s.page.Modal() {
-				page = s.page
-			}
+		if page.Trigger(*event) > 0 {
+			break
 		}
+	}
+	return nil
+}
+
+func (s *Session) RemovePage(page *PageHTML) error {
+	event := &Event{
+		Name:   "remove",
+		Target: page.Name,
+	}
+	if err := s.sendEvent(event); err != nil {
+		return err
 	}
 	return nil
 }
@@ -96,10 +108,6 @@ func (s *Session) Script(script string, args ...interface{}) error {
 	if err := s.sendEvent(event); err != nil {
 		return err
 	}
-	if _, err := s.recvEvent(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
