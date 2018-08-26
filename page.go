@@ -3,7 +3,6 @@ package ihui
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -123,14 +122,14 @@ func (p *PageHTML) On(names string, selector string, action ActionFunc) {
 
 func (p *PageHTML) Trigger(event Event) int {
 	count := 0
-	log.Printf("Trigger %s", event)
+	//	log.Printf("Trigger %s", event)
 	actions, ok := p.actions[event.Target]
 	if ok {
 		for _, action := range actions {
 			if action.Name != event.Name {
 				continue
 			}
-			log.Printf("Execute %s", event)
+			//			log.Printf("Execute %s", event)
 			action.Fct(p.session, event)
 			count++
 		}

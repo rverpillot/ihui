@@ -40,6 +40,8 @@ function start() {
     if (window.location.protocol == "https:") {
         protocol = "wss://"
     }
+    var current_page
+
     var addr = protocol + window.location.host + "{{.Path}}/ws"
     ws = new WebSocket(addr);
 
@@ -56,6 +58,11 @@ function start() {
             case "page":
                 if (msg.Data.title && msg.Data.title != "") {
                     document.title = msg.Data.title
+                }
+
+                if (msg.Data.name != current_page) {
+                    current_page = msg.Data.name
+                    window.scrollTo(0, 0)
                 }
 
                 if ($(".page").is("#" + msg.Data.name)) {

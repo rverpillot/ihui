@@ -68,14 +68,14 @@ func (s *Session) WaitEvent() error {
 			},
 		}
 
-		log.Printf("Display page %s", s.page.Name)
+		// log.Printf("Display page %s", s.page.Name)
 		err = s.sendEvent(event)
 		if err != nil {
 			return err
 		}
 
 		for {
-			log.Print("Wait event")
+			// log.Print("Wait event")
 			event, err = s.recvEvent()
 			if err != nil {
 				return err
@@ -87,7 +87,7 @@ func (s *Session) WaitEvent() error {
 		}
 	}
 
-	log.Printf("Remove page %s", s.page.Name)
+	// log.Printf("Remove page %s", s.page.Name)
 	s.RemovePage(s.page)
 
 	return nil
