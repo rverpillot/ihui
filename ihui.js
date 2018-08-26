@@ -68,12 +68,12 @@ function start() {
                 showPage(msg.Data.name)
                 $(document).trigger("page-"+evt, msg.Data.name)
                 trigger(null, evt, msg.Data.name, "page", null)
-                trigger(null, "load", msg.Data.name, "page", null)
                 break
 
             case "remove":
                 $("#"+msg.Target).remove()
-                trigger(null, "unload", msg.Target, "page", null)
+                $(document).trigger("page-remove", msg.Target)
+                trigger(null, "remove", msg.Target, "page", null)
                 break
 
             case "script":

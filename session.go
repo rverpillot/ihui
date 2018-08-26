@@ -36,55 +36,63 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) e
 		options.Modal = true
 	}
 
-	page := newHTMLPage(name, drawer, s, *options)
+	if s.page != nil {
+		log.Printf("Save previous page %s", s.page.Name)
+	}
+	previous := s.page
+	s.page = newHTMLPage(name, drawer, s, *options)
+	if s.page.options.Modal {
+		return s.WaitEvent(previous)
+	}
+	return nil
+}
 
-	for !page.exit {
-		html, err := page.Render()
+func (s *Session) WaitEvent(previous *PageHTML) error {
+
+	for !s.page.exit {
+		html, err := s.page.Render()
 		if err != nil {
 			log.Print(err)
 			return err
 		}
 
-		html = fmt.Sprintf(`<div id="%s" class="page">%s</div>`, name, html)
+		html = fmt.Sprintf(`<div id="%s" class="page">%s</div>`, s.page.Name, html)
 
 		event := &Event{
 			Name: "page",
 			Data: map[string]interface{}{
-				"name":  name,
-				"title": page.Title(),
+				"name":  s.page.Name,
+				"title": s.page.Title(),
 				"html":  html,
 			},
 		}
+
+		log.Printf("Display page %s", s.page.Name)
 		err = s.sendEvent(event)
 		if err != nil {
 			log.Print(err)
 			return err
 		}
 
-		s.page = page
-		// if !page.options.Modal {
-		// 	return nil
-		// }
+		for {
+			log.Print("Wait event")
+			event, err = s.recvEvent()
+			if err != nil {
+				return err
+			}
 
-		err = s.WaitEvent(page)
-		if err != nil {
-			log.Print(err)
-			return err
+			if s.page.Trigger(*event) > 0 {
+				break
+			}
 		}
 	}
-	return s.RemovePage(page)
-}
 
-func (s *Session) WaitEvent(page *PageHTML) error {
-	for {
-		event, err := s.recvEvent()
-		if err != nil {
-			return err
-		}
+	log.Printf("Remove page %s", s.page.Name)
+	s.RemovePage(s.page)
 
-		if page.Trigger(*event) > 0 {
-			break
-		}
+	if previous != nil {
+		log.Printf("Back to page %s", previous.Name)
+		s.page = previous
 	}
 	return nil
 }
@@ -95,6 +103,7 @@ func (s *Session) RemovePage(page *PageHTML) error {
 		Target: page.Name,
 	}
 	if err := s.sendEvent(event); err != nil {
+		log.Print(err)
 		return err
 	}
 	return nil
@@ -127,5 +136,7 @@ func (s *Session) recvEvent() (*Event, error) {
 }
 
 func (s *Session) QuitPage() {
-	s.page.exit = true
+	if s.page.options.Modal {
+		s.page.exit = true
+	}
 }

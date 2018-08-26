@@ -3,6 +3,8 @@ package ihui
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -106,25 +108,29 @@ func (p *PageHTML) Get(name string) interface{} {
 	return p.session.Get(name)
 }
 
-func (p *PageHTML) On(name string, selector string, action ActionFunc) {
+func (p *PageHTML) On(names string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
 	id := selector
-	if id != "page" {
-		id = p.UniqueId("a")
+	for _, name := range strings.Split(names, " ") {
+		if id != "page" {
+			id = p.UniqueId("a")
+		}
+		p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
 	}
-	p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
 }
 
 func (p *PageHTML) Trigger(event Event) int {
 	count := 0
+	log.Printf("Trigger %s", event)
 	actions, ok := p.actions[event.Target]
 	if ok {
 		for _, action := range actions {
 			if action.Name != event.Name {
 				continue
 			}
+			log.Printf("Execute %s", event)
 			action.Fct(p.session, event)
 			count++
 		}
@@ -178,7 +184,7 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 	for id, actions := range page.actions {
 		action := actions[0]
 
-		if action.Name == "load" {
+		if action.Selector == "page" {
 			continue
 		}
 
