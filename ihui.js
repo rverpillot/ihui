@@ -13,7 +13,7 @@ global.trigger = function (event, name, source, target, data) {
 
 function updateHTML(page, html) {
     morphdom(page[0], html, {
-        onBeforeElChildrenUpdated: function (fromEl, toEl) {
+        onBeforeElUpdated: function (fromEl, toEl) {
             if ($(toEl).hasClass('noupdate')) {
                 return false
             }
@@ -24,12 +24,25 @@ function updateHTML(page, html) {
     
 }
 
+function showPage(name) {
+    $(".page").each(function(i,e){
+        var page = $(e)
+        if (page.attr("id") == name) {
+            page.show()
+        } else {
+            page.hide()
+        }
+    })
+}
+
 function start() {
     var protocol = "ws://"
     if (window.location.protocol == "https:") {
         protocol = "wss://"
     }
-    addr = protocol + window.location.host + "{{.Path}}/ws"
+    var current_page
+
+    var addr = protocol + window.location.host + "{{.Path}}/ws"
     ws = new WebSocket(addr);
 
     ws.onerror = function(event) {
@@ -41,27 +54,37 @@ function start() {
         console.log(msg)
         var body = $(document.body)
 
-        if (msg.Data.title && msg.Data.title != "") {
-            document.title = msg.Data.title
-        }
-
         switch (msg.Name) {
-            case "new":
-                $("body > #main").html(msg.Data.html)
-                $(document).trigger("page-new")
-                trigger(null, "load", "page", "page", null)
+            case "page":
+                if (msg.Data.title && msg.Data.title != "") {
+                    document.title = msg.Data.title
+                }
+
+                if (msg.Data.name != current_page) {
+                    current_page = msg.Data.name
+                    window.scrollTo(0, 0)
+                }
+
+                if ($(".page").is("#" + msg.Data.name)) {
+                    updateHTML($("#"+msg.Data.name), msg.Data.html)
+                    evt = "update"
+                } else {
+                    $("#pages").append(msg.Data.html)
+                    evt = "create"
+                }
+                showPage(msg.Data.name)
+                $(document).trigger("page-"+evt, msg.Data.name)
+                trigger(null, evt, msg.Data.name, "page", null)
                 break
 
-            case "update":
-                updateHTML($("body > #main"), msg.Data.html)
-                $(document).trigger("page")
-                trigger(null, "updated", "page", "page", null)
+            case "remove":
+                $("#"+msg.Target).remove()
+                $(document).trigger("page-remove", msg.Target)
+                trigger(null, "remove", msg.Target, "page", null)
                 break
 
             case "script":
-                // console.log(msg.Data)
                 jQuery.globalEval(msg.Data)
-                trigger(null, "script", "global", "ok")
                 break
         }
 
