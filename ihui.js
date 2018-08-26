@@ -60,26 +60,27 @@ function start() {
                     document.title = msg.Data.title
                 }
 
-                if (msg.Data.name != current_page) {
-                    current_page = msg.Data.name
+                var page = msg.Data.name
+                if (page != current_page) {
+                    current_page = page
                     window.scrollTo(0, 0)
                 }
 
-                if ($(".page").is("#" + msg.Data.name)) {
-                    updateHTML($("#"+msg.Data.name), msg.Data.html)
+                if ($(".page").is("#" + page)) {
+                    updateHTML($("#"+page), msg.Data.html)
                     evt = "update"
                 } else {
                     $("#pages").append(msg.Data.html)
                     evt = "create"
                 }
-                showPage(msg.Data.name)
-                $(document).trigger("page-"+evt, msg.Data.name)
-                trigger(null, evt, msg.Data.name, "page", null)
+                showPage(page)
+                $(document).trigger("page-"+evt, {page: page})
+                trigger(null, evt, page, "page", null)
                 break
 
             case "remove":
                 $("#"+msg.Target).remove()
-                $(document).trigger("page-remove", msg.Target)
+                $(document).trigger("page-remove", {page: msg.Target})
                 trigger(null, "remove", msg.Target, "page", null)
                 break
 
