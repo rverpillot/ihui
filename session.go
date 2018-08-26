@@ -36,21 +36,15 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) e
 		options.Modal = true
 	}
 
-	if s.page != nil {
-		log.Printf("Save previous page %s", s.page.Name)
-	}
 	previous := s.page
+
 	s.page = newHTMLPage(name, drawer, s, *options)
 	if s.page.options.Modal {
 		if err := s.WaitEvent(); err != nil {
 			log.Print(err)
 			return err
 		}
-		if previous != nil {
-			log.Printf("Back to page %s", previous.Name)
-			s.page = previous
-		}
-
+		s.page = previous
 	}
 	return nil
 }
