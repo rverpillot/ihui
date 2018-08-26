@@ -42,13 +42,20 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) e
 	previous := s.page
 	s.page = newHTMLPage(name, drawer, s, *options)
 	if s.page.options.Modal {
-		return s.WaitEvent(previous)
+		if err := s.WaitEvent(); err != nil {
+			log.Print(err)
+			return err
+		}
+		if previous != nil {
+			log.Printf("Back to page %s", previous.Name)
+			s.page = previous
+		}
+
 	}
 	return nil
 }
 
-func (s *Session) WaitEvent(previous *PageHTML) error {
-
+func (s *Session) WaitEvent() error {
 	for !s.page.exit {
 		html, err := s.page.Render()
 		if err != nil {
@@ -70,7 +77,6 @@ func (s *Session) WaitEvent(previous *PageHTML) error {
 		log.Printf("Display page %s", s.page.Name)
 		err = s.sendEvent(event)
 		if err != nil {
-			log.Print(err)
 			return err
 		}
 
@@ -90,10 +96,6 @@ func (s *Session) WaitEvent(previous *PageHTML) error {
 	log.Printf("Remove page %s", s.page.Name)
 	s.RemovePage(s.page)
 
-	if previous != nil {
-		log.Printf("Back to page %s", previous.Name)
-		s.page = previous
-	}
 	return nil
 }
 
