@@ -36,12 +36,16 @@ function start() {
     var addr = protocol + window.location.host + "{{.Path}}/ws"
     var ws = new WebSocket(addr);
 
-    global.trigger = function (event, name, id, target, data) {
+    global._send = function (event, name, id, target, data) {
         if (event) {
             event.preventDefault()
         }
         var msg = JSON.stringify({ name: name, id: id, target: target, data: data })
         ws.send(msg)
+    }
+
+    global.trigger = function(name, target, data) {
+        _send(null, name, "", target, data)
     }
 
 
@@ -75,13 +79,13 @@ function start() {
                 }
                 showPage(page)
                 $(document).trigger("page-"+evt, {page: page})
-                trigger(null, evt, page, "page", null)
+                trigger(evt, "page", page)
                 break
 
             case "remove":
                 $("#"+msg.Target).remove()
                 $(document).trigger("page-remove", {page: msg.Target})
-                trigger(null, "remove", msg.Target, "page", null)
+                trigger("remove", "page", msg.Target)
                 break
 
             case "script":

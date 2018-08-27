@@ -168,7 +168,7 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 		attr := "_action_id"
 		target = s.AttrOr(attr, target)
 		s.SetAttr(attr, target)
-		s.SetAttr(name, fmt.Sprintf(`trigger(event,"%s","%s","%s",%s);`, evname, id, target, value))
+		s.SetAttr(name, fmt.Sprintf(`_send(event,"%s","%s","%s",%s);`, evname, id, target, value))
 		return target
 	}
 
