@@ -15,7 +15,7 @@ import (
 
 type Event struct {
 	Name   string
-	Source string
+	Id     string
 	Target string
 	Data   interface{}
 }

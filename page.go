@@ -164,11 +164,11 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 	}
 
 	addAction := func(s *goquery.Selection, name string, evname string, target string, value string) string {
-		source := s.AttrOr("data-id", s.AttrOr("id", ""))
+		id := s.AttrOr("data-id", s.AttrOr("id", ""))
 		attr := "_action_id"
 		target = s.AttrOr(attr, target)
 		s.SetAttr(attr, target)
-		s.SetAttr(name, fmt.Sprintf(`trigger(event,"%s","%s","%s",%s);`, evname, source, target, value))
+		s.SetAttr(name, fmt.Sprintf(`trigger(event,"%s","%s","%s",%s);`, evname, id, target, value))
 		return target
 	}
 

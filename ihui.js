@@ -1,15 +1,6 @@
 
 var morphdom = require('morphdom')
 
-var ws
-
-global.trigger = function (event, name, source, target, data) {
-    if (event) {
-        event.preventDefault()
-    }
-    var msg = JSON.stringify({ name: name, source: source, target: target, data: data })
-    ws.send(msg)
-}
 
 function updateHTML(page, html) {
     morphdom(page[0], html, {
@@ -43,7 +34,16 @@ function start() {
     var current_page
 
     var addr = protocol + window.location.host + "{{.Path}}/ws"
-    ws = new WebSocket(addr);
+    var ws = new WebSocket(addr);
+
+    global.trigger = function (event, name, id, target, data) {
+        if (event) {
+            event.preventDefault()
+        }
+        var msg = JSON.stringify({ name: name, id: id, target: target, data: data })
+        ws.send(msg)
+    }
+
 
     ws.onerror = function(event) {
         console.log(event)
