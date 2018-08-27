@@ -122,21 +122,18 @@ func (p *PageHTML) On(names string, selector string, action ActionFunc) {
 
 func (p *PageHTML) Trigger(event Event) int {
 	count := 0
-	//	log.Printf("Trigger %s", event)
+	// log.Printf("Trigger %s", event)
 	actions, ok := p.actions[event.Target]
 	if ok {
 		for _, action := range actions {
 			if action.Name != event.Name {
 				continue
 			}
-			//			log.Printf("Execute %s", event)
-			action.Fct(p.session, event)
-			count++
+			// log.Printf("Execute %s", event)
+			if action.Fct(p.session, event) {
+				count++
+			}
 		}
-	}
-	//TODO: return true to update page
-	if event.Target == "page" {
-		count = 0
 	}
 	return count
 }

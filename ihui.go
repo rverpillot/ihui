@@ -24,7 +24,7 @@ func (e *Event) Value() string {
 	return e.Data.(string)
 }
 
-type ActionFunc func(*Session, Event)
+type ActionFunc func(*Session, Event) bool
 
 func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
 
