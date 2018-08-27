@@ -36,17 +36,30 @@ function start() {
     var addr = protocol + window.location.host + "{{.Path}}/ws"
     var ws = new WebSocket(addr);
 
-    global._send = function (event, name, id, target, data) {
-        if (event) {
-            event.preventDefault()
+    global.ihui = {
+        on: function (event, name, id, target, data) {
+            if (event) {
+                event.preventDefault()
+            }
+            var msg = JSON.stringify({ name: name, id: id, target: target, data: data })
+            ws.send(msg)
+        },
+        trigger: function (name, target, data) {
+            ihui.on(null, name, "", target, data)
         }
-        var msg = JSON.stringify({ name: name, id: id, target: target, data: data })
-        ws.send(msg)
     }
 
-    global.trigger = function(name, target, data) {
-        _send(null, name, "", target, data)
-    }
+    // global._send = function (event, name, id, target, data) {
+    //     if (event) {
+    //         event.preventDefault()
+    //     }
+    //     var msg = JSON.stringify({ name: name, id: id, target: target, data: data })
+    //     ws.send(msg)
+    // }
+
+    // global.trigger = function(name, target, data) {
+    //     _send(null, name, "", target, data)
+    // }
 
 
     ws.onerror = function(event) {
@@ -79,13 +92,13 @@ function start() {
                 }
                 showPage(page)
                 $(document).trigger("page-"+evt, {page: page})
-                trigger(evt, "page", page)
+                ihui.trigger(evt, "page", page)
                 break
 
             case "remove":
                 $("#"+msg.Target).remove()
                 $(document).trigger("page-remove", {page: msg.Target})
-                trigger("remove", "page", msg.Target)
+                ihui.trigger("remove", "page", msg.Target)
                 break
 
             case "script":
