@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	ihui "rverpi/ihui.v2"
+	ihui "rverpi90/ihui.v2"
 )
 
 type Menu struct {

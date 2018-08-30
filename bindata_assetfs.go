@@ -107,7 +107,7 @@ func jsIhuiJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "js/ihui.js", size: 31537, mode: os.FileMode(420), modTime: time.Unix(1535440182, 0)}
+	info := bindataFileInfo{name: "js/ihui.js", size: 31537, mode: os.FileMode(420), modTime: time.Unix(1535619205, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
