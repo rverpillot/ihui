@@ -1,7 +1,6 @@
 vendor
 node_modules/**
 bin/
-bindata*.go
 resources/js/ihui.js
 go.sum
 Gopkg.lock
