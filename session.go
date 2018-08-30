@@ -58,7 +58,7 @@ func (s *Session) WaitEvent() error {
 			return err
 		}
 
-		html = fmt.Sprintf(`<div id="%s" class="page">%s</div>`, s.page.Name, html)
+		html = fmt.Sprintf(`<div id="%s" class="page" style="display: none">%s</div>`, s.page.Name, html)
 
 		event := &Event{
 			Name: "page",
