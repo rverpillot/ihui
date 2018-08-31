@@ -2,7 +2,6 @@ package ihui
 
 import (
 	"html/template"
-	"log"
 )
 
 type PageTemplate struct {
@@ -13,8 +12,7 @@ type PageTemplate struct {
 func NewPageTemplate(filename string, tmpl string, model interface{}) *PageTemplate {
 	t, err := template.New(filename).Parse(tmpl)
 	if err != nil {
-		log.Print(err)
-		return nil
+		panic(err)
 	}
 	return &PageTemplate{
 		template: t,
