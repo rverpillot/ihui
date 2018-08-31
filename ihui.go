@@ -53,7 +53,9 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL.Path)
 
 	if r.Header.Get("Upgrade") == "websocket" {
-		var upgrader = websocket.Upgrader{}
+		var upgrader = websocket.Upgrader{
+			EnableCompression: true,
+		}
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println(err)

@@ -18,12 +18,9 @@ function updateHTML(page, html) {
 function showPage(name) {
     var pages = document.querySelectorAll(".page")
     pages.forEach(function (page) {
-        if (page.getAttribute("id") == name) {
-            page.style.display = ''
-        } else {
-            page.style.display = 'none'
-        }
+        page.style.display = 'none'
     })
+    document.querySelector(".page#"+name).style.display = ''
 }
 
 function start() {
