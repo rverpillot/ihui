@@ -3,25 +3,25 @@ var morphdom = require('morphdom')
 
 
 function updateHTML(page, html) {
-    morphdom(page[0], html, {
+    morphdom(page, html, {
         onBeforeElUpdated: function (fromEl, toEl) {
-            if ($(toEl).hasClass('noupdate')) {
+            if (toEl.classList.contains('noupdate')) {
                 return false
             }
             return true
         },
         childrenOnly: true
     })
-    
+
 }
 
 function showPage(name) {
-    $(".page").each(function(i,e){
-        var page = $(e)
-        if (page.attr("id") == name) {
-            page.show()
+    var pages = document.querySelectorAll(".page")
+    pages.forEach(function (page) {
+        if (page.getAttribute("id") == name) {
+            page.style.display = ''
         } else {
-            page.hide()
+            page.style.display = 'none'
         }
     })
 }
@@ -49,27 +49,13 @@ function start() {
         }
     }
 
-    // global._send = function (event, name, id, target, data) {
-    //     if (event) {
-    //         event.preventDefault()
-    //     }
-    //     var msg = JSON.stringify({ name: name, id: id, target: target, data: data })
-    //     ws.send(msg)
-    // }
-
-    // global.trigger = function(name, target, data) {
-    //     _send(null, name, "", target, data)
-    // }
-
-
-    ws.onerror = function(event) {
+    ws.onerror = function (event) {
         console.log(event)
     }
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
         console.log(msg)
-        var body = $(document.body)
 
         switch (msg.Name) {
             case "page":
@@ -77,32 +63,35 @@ function start() {
                     document.title = msg.Data.title
                 }
 
-                var page = msg.Data.name
-                if (page != current_page) {
-                    current_page = page
+                var pageName = msg.Data.name
+                if (pageName != current_page) {
+                    current_page = pageName
                     window.scrollTo(0, 0)
                 }
 
-                if ($(".page").is("#" + page)) {
-                    updateHTML($("#"+page), msg.Data.html)
+                var page = document.querySelector("#"+pageName)
+
+                if (page) {
+                    updateHTML(page, msg.Data.html)
                     evt = "update"
                 } else {
                     $("#pages").append(msg.Data.html)
                     evt = "create"
                 }
-                showPage(page)
-                $(document).trigger("page-"+evt, {page: page})
-                ihui.trigger(evt, "page", page)
+                showPage(pageName)
+                $(document).trigger("page-" + evt, { page: pageName })
+                ihui.trigger(evt, "page", pageName)
                 break
 
             case "remove":
-                $("#"+msg.Target).remove()
-                $(document).trigger("page-remove", {page: msg.Target})
+                var page = document.querySelector("#" + msg.Target)
+                page.parentNode.removeChild(page)
+                $(document).trigger("page-remove", { page: msg.Target })
                 ihui.trigger("remove", "page", msg.Target)
                 break
 
             case "script":
-                jQuery.globalEval(msg.Data)
+                eval(msg.Data)
                 break
         }
 
@@ -114,7 +103,7 @@ function start() {
     }
 }
 
-$(window).on("load", function () { 
-    start(); 
+window.addEventListener("load", function(event){
+    start()
 })
 
