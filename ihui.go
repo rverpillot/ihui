@@ -63,6 +63,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		session := newSession(ws)
+		session.sendEvent(&Event{Name: "init"})
 		h.startFunc(session)
 
 	} else {
