@@ -52,7 +52,7 @@ function start() {
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        console.log(msg)
+        // console.log(msg)
 
         switch (msg.Name) {
             case "page":
@@ -81,10 +81,11 @@ function start() {
                 break
 
             case "remove":
-                var page = document.querySelector("#" + msg.Target)
+                var pageName = msg.Target
+                var page = document.querySelector("#" + pageName)
                 page.parentNode.removeChild(page)
-                $(document).trigger("page-remove", { page: msg.Target })
-                ihui.trigger("remove", "page", msg.Target)
+                $(document).trigger("page-remove", { page: pageName })
+                ihui.trigger("remove", "page", pageName)
                 break
 
             case "script":
