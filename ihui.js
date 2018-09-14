@@ -17,9 +17,9 @@ function updateHTML(page, html) {
 
 function showPage(name) {
     var pages = document.querySelectorAll(".page")
-    pages.forEach(function (page) {
-        page.style.display = 'none'
-    })
+    for (var i = 0; i < pages.length; i++) {
+        pages[i].style.display = 'none'
+    }
     document.querySelector(".page#"+name).style.display = ''
 }
 
