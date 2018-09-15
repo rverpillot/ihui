@@ -47,7 +47,9 @@ function start() {
     }
 
     window.onpopstate = function(event) {
-        console.log(event.state)
+        var msg = event.state
+        console.log(msg)
+        ihui.trigger(msg.name, msg.target, msg.data)
     }
 
     ws.onerror = function (event) {

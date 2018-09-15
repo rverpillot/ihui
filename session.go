@@ -12,13 +12,15 @@ type Session struct {
 	refreshPage    bool
 	ws             *websocket.Conn
 	page           *PageHTML
+	countId        int64
 	actionsHistory map[string][]Action
 }
 
 func newSession(ws *websocket.Conn) *Session {
 	return &Session{
-		params: make(map[string]interface{}),
-		ws:     ws,
+		params:  make(map[string]interface{}),
+		ws:      ws,
+		countId: 10,
 	}
 }
 
@@ -28,6 +30,11 @@ func (s *Session) Set(name string, value interface{}) {
 
 func (s *Session) Get(name string) interface{} {
 	return s.params[name]
+}
+
+func (s *Session) UniqueId(prefix string) string {
+	s.countId++
+	return fmt.Sprintf("%s%d", prefix, s.countId)
 }
 
 func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) bool {

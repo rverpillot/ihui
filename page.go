@@ -103,8 +103,7 @@ func (p *PageHTML) Write(data []byte) (int, error) {
 }
 
 func (p *PageHTML) UniqueId(prefix string) string {
-	p.countID++
-	return fmt.Sprintf("%s%d", prefix, p.countID)
+	return p.session.UniqueId(prefix)
 }
 
 func (p *PageHTML) Get(name string) interface{} {
@@ -152,11 +151,11 @@ func (p *PageHTML) Script(script string, args ...interface{}) error {
 }
 
 func (p *PageHTML) Render() (string, error) {
-	p.actionsClear()
+	p.resetActions()
 	return p.html(p.drawer)
 }
 
-func (p *PageHTML) actionsClear() {
+func (p *PageHTML) resetActions() {
 	p.actions = make(map[string][]Action)
 }
 
