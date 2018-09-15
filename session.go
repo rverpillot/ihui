@@ -8,10 +8,11 @@ import (
 )
 
 type Session struct {
-	params      map[string]interface{}
-	refreshPage bool
-	ws          *websocket.Conn
-	page        *PageHTML
+	params         map[string]interface{}
+	refreshPage    bool
+	ws             *websocket.Conn
+	page           *PageHTML
+	actionsHistory map[string][]Action
 }
 
 func newSession(ws *websocket.Conn) *Session {
@@ -51,6 +52,8 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) b
 }
 
 func (s *Session) WaitEvent() error {
+	actionsHistory := make(map[string][]Action)
+
 	for !s.page.exit {
 		html, err := s.page.Render()
 		if err != nil {
@@ -82,7 +85,7 @@ func (s *Session) WaitEvent() error {
 				return err
 			}
 
-			if s.page.Trigger(*event) > 0 {
+			if s.page.Trigger(*event, actionsHistory) > 0 {
 				break
 			}
 		}

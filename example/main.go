@@ -81,6 +81,7 @@ func main() {
 	if port == "" {
 		port = "9090"
 	}
-
-	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, nil))
+	addr := fmt.Sprintf("0.0.0.0:%s", port)
+	log.Printf("Listen to http://%s", addr)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }

@@ -72,6 +72,10 @@ func (p *PageHTML) Modal() bool {
 	return p.options.Modal
 }
 
+func (p *PageHTML) Actions() map[string][]Action {
+	return p.actions
+}
+
 func (p *PageHTML) Add(selector string, render PageRenderer) error {
 	doc, err := goquery.NewDocumentFromReader(&p.buffer)
 	if err != nil {
@@ -120,9 +124,13 @@ func (p *PageHTML) On(names string, selector string, action ActionFunc) {
 	}
 }
 
-func (p *PageHTML) Trigger(event Event) int {
+func (p *PageHTML) Trigger(event Event, actionsHistory map[string][]Action) int {
 	count := 0
 	// log.Printf("Trigger %s", event)
+	for k, v := range actionsHistory {
+		p.actions[k] = v
+	}
+
 	actions, ok := p.actions[event.Target]
 	if ok {
 		for _, action := range actions {
@@ -134,6 +142,7 @@ func (p *PageHTML) Trigger(event Event) int {
 				count++
 			}
 		}
+		actionsHistory[event.Target] = actions
 	}
 	return count
 }
@@ -143,9 +152,12 @@ func (p *PageHTML) Script(script string, args ...interface{}) error {
 }
 
 func (p *PageHTML) Render() (string, error) {
-	p.actions = make(map[string][]Action)
-	p.countID = 1000
+	p.actionsClear()
 	return p.html(p.drawer)
+}
+
+func (p *PageHTML) actionsClear() {
+	p.actions = make(map[string][]Action)
 }
 
 func (page *PageHTML) html(drawer PageRenderer) (string, error) {

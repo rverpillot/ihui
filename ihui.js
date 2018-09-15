@@ -35,15 +35,19 @@ function start() {
 
     global.ihui = {
         on: function (event, name, id, target, data) {
-            if (event) {
-                event.preventDefault()
-            }
-            var msg = JSON.stringify({ name: name, id: id, target: target, data: data })
-            ws.send(msg)
+            var msg = { name: name, id: id, target: target, data: data }
+            ws.send(JSON.stringify(msg))
+            history.pushState(msg, "")
+            event.preventDefault()
         },
         trigger: function (name, target, data) {
-            ihui.on(null, name, "", target, data)
+            var msg = { name: name, target: target, data: data }
+            ws.send(JSON.stringify(msg))
         }
+    }
+
+    window.onpopstate = function(event) {
+        console.log(event.state)
     }
 
     ws.onerror = function (event) {
