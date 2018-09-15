@@ -48,7 +48,11 @@ function start() {
 
     window.onpopstate = function(event) {
         var msg = event.state
-        console.log(msg)
+        if (!msg) {
+            location.reload()
+            return
+        } 
+        // console.log(msg)
         ihui.trigger(msg.name, msg.target, msg.data)
     }
 

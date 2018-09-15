@@ -39,7 +39,6 @@ type PageHTML struct {
 	buffer  bytes.Buffer
 	options Options
 	title   string
-	countID int
 	exit    bool
 	evt     string
 	session *Session
@@ -126,11 +125,15 @@ func (p *PageHTML) On(names string, selector string, action ActionFunc) {
 func (p *PageHTML) Trigger(event Event, actionsHistory map[string][]Action) int {
 	count := 0
 	// log.Printf("Trigger %s", event)
+	allActions := make(map[string][]Action)
 	for k, v := range actionsHistory {
-		p.actions[k] = v
+		allActions[k] = v
+	}
+	for k, v := range p.actions {
+		allActions[k] = v
 	}
 
-	actions, ok := p.actions[event.Target]
+	actions, ok := allActions[event.Target]
 	if ok {
 		for _, action := range actions {
 			if action.Name != event.Name {
@@ -140,8 +143,8 @@ func (p *PageHTML) Trigger(event Event, actionsHistory map[string][]Action) int 
 			if action.Fct(p.session, event) {
 				count++
 			}
+			actionsHistory[event.Target] = append(actionsHistory[event.Target], action)
 		}
-		actionsHistory[event.Target] = actions
 	}
 	return count
 }
