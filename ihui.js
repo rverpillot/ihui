@@ -34,12 +34,46 @@ function start() {
     var ws = new WebSocket(addr);
 
     global.ihui = {
-        on: function (event, name, id, target, data) {
+        on: function (event, name, target, e) {
+            var id = $(e).attr("data-id") || $(e).attr("id") || ""
+
+            switch (name) {
+                case "click":
+                    var data = $(e).attr("data-value") || $(e).attr("data-id") || $(e).attr("id") || ""  
+                    break;
+            
+                case "check":
+                    var data = $(e).prop("checked")
+                    break;
+
+                case "change":
+                    var nameAttr = $(e).attr("name")
+                    var value = $(e).val()
+                    if (nameAttr) {
+                        var data = {name: nameAttr, val: value}
+                    } else {
+                        var data = value
+                    }
+                    break;
+
+                case "input":
+                    var data = $(e).val()
+                    break;
+
+                case "submit":
+                    var data = $(e).serializeObject()
+                    break;
+
+                default:
+                    return
+            }
+            
             var msg = { name: name, id: id, target: target, data: data }
             ws.send(JSON.stringify(msg))
             history.pushState(msg, "")
             event.preventDefault()
         },
+
         trigger: function (name, target, data) {
             var msg = { name: name, target: target, data: data }
             ws.send(JSON.stringify(msg))
