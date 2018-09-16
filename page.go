@@ -116,7 +116,7 @@ func (p *PageHTML) On(names string, selector string, action ActionFunc) {
 	id := selector
 	for _, name := range strings.Split(names, " ") {
 		if id != "page" {
-			id = p.UniqueId("a")
+			id = p.UniqueId("a-")
 		}
 		p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
 	}
@@ -143,7 +143,9 @@ func (p *PageHTML) Trigger(event Event, actionsHistory map[string][]Action) int 
 			if action.Fct(p.session, event) {
 				count++
 			}
-			actionsHistory[event.Target] = append(actionsHistory[event.Target], action)
+			if event.Id != "" {
+				actionsHistory[event.Target] = append(actionsHistory[event.Target], action)
+			}
 		}
 	}
 	return count
