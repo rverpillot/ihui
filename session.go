@@ -12,7 +12,7 @@ type Session struct {
 	refreshPage    bool
 	ws             *websocket.Conn
 	page           *PageHTML
-	countId        int64
+	countId        map[string]int64
 	actionsHistory map[string][]Action
 }
 
@@ -20,7 +20,7 @@ func newSession(ws *websocket.Conn) *Session {
 	return &Session{
 		params:  make(map[string]interface{}),
 		ws:      ws,
-		countId: 10,
+		countId: make(map[string]int64),
 	}
 }
 
@@ -33,8 +33,13 @@ func (s *Session) Get(name string) interface{} {
 }
 
 func (s *Session) UniqueId(prefix string) string {
-	s.countId++
-	return fmt.Sprintf("%s%d", prefix, s.countId)
+	count, ok := s.countId[prefix]
+	if !ok {
+		count = 0
+	}
+	count++
+	s.countId[prefix] = count
+	return fmt.Sprintf("%s%d", prefix, count)
 }
 
 func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) bool {
@@ -92,8 +97,12 @@ func (s *Session) WaitEvent() error {
 				return err
 			}
 
-			if s.page.Trigger(*event, actionsHistory) > 0 {
+			if n := s.page.Trigger(*event, actionsHistory); n > 0 {
 				break
+			} else {
+				if n == 0 && event.Id != "" {
+					log.Printf("error: no action for %s", event.Id)
+				}
 			}
 		}
 	}
