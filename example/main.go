@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"rverpi90/ihui.v2"
+	"rverpi90/ihui"
 )
 
 // Button
