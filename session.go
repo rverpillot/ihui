@@ -99,10 +99,6 @@ func (s *Session) WaitEvent() error {
 
 			if n := s.page.Trigger(*event, actionsHistory); n > 0 {
 				break
-			} else {
-				if n == 0 && event.Id != "" {
-					log.Printf("error: no action for %s", event.Id)
-				}
 			}
 		}
 	}
