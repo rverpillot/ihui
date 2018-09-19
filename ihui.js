@@ -39,7 +39,12 @@ function start() {
 
             switch (name) {
                 case "click":
+                    var win = $(e).attr("target") 
                     var data = $(e).attr("data-value") || $(e).attr("data-id") || $(e).attr("id") || ""  
+                    if (win) {
+                        data = {target: win, val: data}
+                        window.open("", win)
+                    }
                     break;
             
                 case "check":

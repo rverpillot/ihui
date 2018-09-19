@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"rverpi90/ihui"
+
+	"bitbucket.org/rverpi90/ihui"
 )
 
 type Menu struct {
