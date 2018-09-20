@@ -5,9 +5,15 @@ import (
 	"log"
 
 	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
+)
+
+var (
+	sessions = make(map[string]*Session)
 )
 
 type Session struct {
+	id             string
 	params         map[string]interface{}
 	refreshPage    bool
 	ws             *websocket.Conn
@@ -16,12 +22,28 @@ type Session struct {
 	actionsHistory map[string][]Action
 }
 
+func GetSession(id string) *Session {
+	return sessions[id]
+}
+
 func newSession(ws *websocket.Conn) *Session {
-	return &Session{
+	session := &Session{
+		id:      uuid.NewV4().String(),
 		params:  make(map[string]interface{}),
 		ws:      ws,
 		countId: make(map[string]int64),
 	}
+	sessions[session.id] = session
+	return session
+}
+
+func (s *Session) Close() {
+	s.ws.Close()
+	delete(sessions, s.id)
+}
+
+func (s *Session) Id() string {
+	return s.id
 }
 
 func (s *Session) Set(name string, value interface{}) {
