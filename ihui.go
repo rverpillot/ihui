@@ -24,6 +24,14 @@ func (e *Event) Value() string {
 	return e.Data.(string)
 }
 
+func (e *Event) IsChecked() bool {
+	t, ok := e.Data.(bool)
+	if !ok {
+		return false
+	}
+	return t
+}
+
 type ActionFunc func(*Session, Event) bool
 
 func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
