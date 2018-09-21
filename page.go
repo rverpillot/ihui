@@ -225,7 +225,7 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					_id = addAction(ss, "onchange", action.Name, id)
+					_id = addAction(ss, "onchange", "change", id)
 				})
 			}
 			if _id != id {
