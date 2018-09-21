@@ -17,12 +17,13 @@ type Page interface {
 	WriteString(html string)
 	Write(data []byte) (int, error)
 	Add(string, PageRenderer) error
-	UniqueId(string) string
 	SetTitle(string)
+	On(id string, name string, action ActionFunc)
+
 	Session() *Session
 	Get(string) interface{}
-	On(id string, name string, action ActionFunc)
-	Script(string, ...interface{}) error
+	UniqueId(string) string
+	// Script(string, ...interface{}) error
 }
 
 type PageRendererFunc func(Page)

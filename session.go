@@ -54,6 +54,10 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
+func (s *Session) CurrentPage() *PageHTML {
+	return s.page
+}
+
 func (s *Session) UniqueId(prefix string) string {
 	count, ok := s.countId[prefix]
 	if !ok {
@@ -148,6 +152,14 @@ func (s *Session) Script(script string, args ...interface{}) error {
 		Name: "script",
 		Data: fmt.Sprintf(script, args...),
 	}
+	if err := s.sendEvent(event); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Session) UpdatePartial(id string, html string) error {
+	event := &Event{Name: "update", Id: id, Data: html}
 	if err := s.sendEvent(event); err != nil {
 		return err
 	}

@@ -2,8 +2,11 @@
 var morphdom = require('morphdom')
 
 
-function updateHTML(page, html) {
-    morphdom(page, html, {
+function updateHTML(el, html) {
+    if (!el) {
+        return
+    }
+    morphdom(el, html, {
         onBeforeElUpdated: function (fromEl, toEl) {
             if (toEl.classList.contains('noupdate')) {
                 return false
@@ -103,6 +106,11 @@ function start() {
         // console.log(msg)
 
         switch (msg.Name) {
+            case "update":
+                var el = document.querySelector("#" + msg.Id)
+                updateHTML(el, msg.Data)
+                break
+
             case "page":
                 if (msg.Data.title && msg.Data.title != "") {
                     document.title = msg.Data.title
