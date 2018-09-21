@@ -16,12 +16,13 @@ type Options struct {
 type Page interface {
 	WriteString(html string)
 	Write(data []byte) (int, error)
-	Add(string, PageRenderer) error
-	SetTitle(string)
+	Add(selector string, render PageRenderer) error
+	SetTitle(title string)
 	On(id string, name string, action ActionFunc)
 	Session() *Session
-	Get(string) interface{}
-	UniqueId(string) string
+	Update(id string, html string) error
+	Get(name string) interface{}
+	UniqueId(prefix string) string
 }
 
 type PageRendererFunc func(Page)
@@ -153,6 +154,14 @@ func (p *PageHTML) Trigger(event Event, actionsHistory map[string][]Action) int 
 func (p *PageHTML) Render() (string, error) {
 	p.resetActions()
 	return p.html(p.drawer)
+}
+
+func (p *PageHTML) Update(id string, html string) error {
+	event := &Event{Name: "update", Id: id, Data: html}
+	if err := p.session.sendEvent(event); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (p *PageHTML) resetActions() {

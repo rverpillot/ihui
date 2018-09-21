@@ -54,11 +54,9 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
-/*
-func (s *Session) CurrentPage() *PageHTML {
+func (s *Session) CurrentPage() Page {
 	return s.page
 }
-*/
 
 func (s *Session) UniqueId(prefix string) string {
 	count, ok := s.countId[prefix]
@@ -82,7 +80,7 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) b
 
 	s.page = newHTMLPage(name, drawer, s, *options)
 	if s.page.options.Modal {
-		if err := s.WaitEvent(); err != nil {
+		if err := s.waitEvent(); err != nil {
 			log.Print(err)
 			return false
 		}
@@ -91,7 +89,7 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) b
 	return true
 }
 
-func (s *Session) WaitEvent() error {
+func (s *Session) waitEvent() error {
 	actionsHistory := make(map[string][]Action)
 
 	for !s.page.exit {
@@ -154,14 +152,6 @@ func (s *Session) Script(script string, args ...interface{}) error {
 		Name: "script",
 		Data: fmt.Sprintf(script, args...),
 	}
-	if err := s.sendEvent(event); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Session) UpdatePartial(id string, html string) error {
-	event := &Event{Name: "update", Id: id, Data: html}
 	if err := s.sendEvent(event); err != nil {
 		return err
 	}
