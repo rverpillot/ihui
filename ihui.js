@@ -46,7 +46,7 @@ function start() {
                     var data = $(e).attr("data-value") || $(e).attr("data-id") || $(e).attr("id") || ""  
                     if (win) {
                         data = {target: win, val: data}
-                        window.open("", win)
+                        window.open($(e).attr("href") || "", win)
                     }
                     break;
             
