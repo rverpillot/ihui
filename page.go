@@ -209,9 +209,6 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 			switch action.Name {
 			case "click":
 				_id = addAction(s, "onclick", action.Name, id)
-				// if goquery.NodeName(s) == "a" {
-				// 	s.SetAttr("href", "")
-				// }
 
 			case "check":
 				_id = addAction(s, "onchange", action.Name, id)
