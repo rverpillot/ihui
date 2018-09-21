@@ -52,13 +52,11 @@ function start() {
                     break;
 
                 case "change":
-                    var nameAttr = $(e).attr("name")
-                    var value = $(e).val()
-                    if (nameAttr) {
-                        var data = {name: nameAttr, val: value}
-                    } else {
-                        var data = value
-                    }
+                    var data = $(e).val()
+                    break;
+
+                case "form":
+                    var data = { name: $(e).attr("name"), val: $(e).val()}
                     break;
 
                 case "input":
