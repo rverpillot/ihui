@@ -72,7 +72,7 @@ function start() {
             }
             
             var msg = { name: name, id: id, target: target, data: data }
-            console.log(msg)
+            // console.log(msg)
             ws.send(JSON.stringify(msg))
             history.pushState(msg, "")
             event.preventDefault()
