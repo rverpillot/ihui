@@ -19,11 +19,9 @@ type Page interface {
 	Add(string, PageRenderer) error
 	SetTitle(string)
 	On(id string, name string, action ActionFunc)
-
 	Session() *Session
 	Get(string) interface{}
 	UniqueId(string) string
-	// Script(string, ...interface{}) error
 }
 
 type PageRendererFunc func(Page)
@@ -150,10 +148,6 @@ func (p *PageHTML) Trigger(event Event, actionsHistory map[string][]Action) int 
 		}
 	}
 	return count
-}
-
-func (p *PageHTML) Script(script string, args ...interface{}) error {
-	return p.session.Script(script, args...)
 }
 
 func (p *PageHTML) Render() (string, error) {

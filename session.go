@@ -54,9 +54,11 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
+/*
 func (s *Session) CurrentPage() *PageHTML {
 	return s.page
 }
+*/
 
 func (s *Session) UniqueId(prefix string) string {
 	count, ok := s.countId[prefix]
@@ -166,6 +168,13 @@ func (s *Session) UpdatePartial(id string, html string) error {
 	return nil
 }
 
+func (s *Session) CloseModalPage() bool {
+	if s.page.options.Modal {
+		s.page.exit = true
+	}
+	return s.page.exit
+}
+
 func (s *Session) sendEvent(event *Event) error {
 	if err := websocket.WriteJSON(s.ws, event); err != nil {
 		return err
@@ -179,11 +188,4 @@ func (s *Session) recvEvent() (*Event, error) {
 		return nil, err
 	}
 	return &event, nil
-}
-
-func (s *Session) QuitPage() bool {
-	if s.page.options.Modal {
-		s.page.exit = true
-	}
-	return s.page.exit
 }
