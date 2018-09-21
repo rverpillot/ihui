@@ -107,7 +107,7 @@ function start() {
 
         switch (msg.Name) {
             case "update":
-                var el = document.querySelector("#" + msg.Id)
+                var el = document.querySelector(msg.Target)
                 updateHTML(el, msg.Data)
                 break
 

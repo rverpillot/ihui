@@ -20,7 +20,7 @@ type Page interface {
 	SetTitle(title string)
 	On(id string, name string, action ActionFunc)
 	Session() *Session
-	Update(id string, html string) error
+	Update(selector string, html string) error
 	Get(name string) interface{}
 	UniqueId(prefix string) string
 }
@@ -156,8 +156,8 @@ func (p *PageHTML) Render() (string, error) {
 	return p.html(p.drawer)
 }
 
-func (p *PageHTML) Update(id string, html string) error {
-	event := &Event{Name: "update", Id: id, Data: html}
+func (p *PageHTML) Update(selector string, html string) error {
+	event := &Event{Name: "update", Target: selector, Data: html}
 	if err := p.session.sendEvent(event); err != nil {
 		return err
 	}
