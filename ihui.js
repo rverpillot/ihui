@@ -32,7 +32,7 @@ function showPage(name) {
 
 global.ihui = {}
 
-global.ihui.start = function () {
+function start() {
 
     if ($("#pages").length == 0) {
         $("body").prepend('<div id="pages"></div>')
@@ -173,4 +173,7 @@ global.ihui.start = function () {
     }
 }
 
+window.addEventListener("load", function (event) {
+    start()
+})
 
