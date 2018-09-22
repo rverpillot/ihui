@@ -1,6 +1,10 @@
 
-var morphdom = require('morphdom')
+var morphdom = require("morphdom")
+var $ = require("jquery")
+// var $ = require("zepto")
 
+var scripts = document.getElementsByTagName('script')
+var myScript = scripts[scripts.length - 1]
 
 function updateHTML(el, html) {
     if (!el) {
@@ -23,21 +27,29 @@ function showPage(name) {
     for (var i = 0; i < pages.length; i++) {
         pages[i].style.display = 'none'
     }
-    document.querySelector(".page#"+name).style.display = ''
+    document.querySelector(".page#" + name).style.display = ''
 }
 
-function start() {
-    var protocol = "ws://"
-    if (window.location.protocol == "https:") {
-        protocol = "wss://"
+global.ihui = {}
+
+global.ihui.start = function () {
+
+    if ($("#pages").length == 0) {
+        $("body").prepend('<div id="pages"></div>')
     }
     var current_page
 
-    var addr = protocol + window.location.host + "{{.Path}}/ws"
-    var ws = new WebSocket(addr);
+    var location = myScript.src.replace("/js/ihui.js", "")
+    if (window.location.protocol == "https:") {
+        var protocol = "wss://"
+        location = location.replace("https://", "")
+    } else {
+        var protocol = "ws://"
+        location = location.replace("http://", "")
+    }
+    var ws = new WebSocket(protocol + location + "/ws");
 
-    global.ihui = {
-        on: function (event, name, target, e) {
+    global.ihui.on = function (event, name, target, e) {
             var id = $(e).attr("data-id") || $(e).attr("id") || ""
 
             switch (name) {
@@ -45,7 +57,7 @@ function start() {
                     var win = $(e).attr("target") 
                     var data = $(e).attr("data-value") || $(e).attr("data-id") || $(e).attr("id") || ""  
                     if (win) {
-                        data = {target: win, val: data}
+                    data = { target: win, val: data }
                         window.open($(e).attr("href") || "", win)
                     }
                     break;
@@ -59,7 +71,7 @@ function start() {
                     break;
 
                 case "form":
-                    var data = { name: $(e).attr("name"), val: $(e).val()}
+                var data = { name: $(e).attr("name"), val: $(e).val() }
                     break;
 
                 case "input":
@@ -67,7 +79,11 @@ function start() {
                     break;
 
                 case "submit":
-                    var data = $(e).serializeObject()
+                var form = $(e).serializeArray()
+                var data = {}
+                for (var i = 0; i < form.length; i++) {
+                    data[form[i].name] = form[i].value
+                }
                     break;
 
                 default:
@@ -79,15 +95,15 @@ function start() {
             ws.send(JSON.stringify(msg))
             history.pushState(msg, "")
             event.preventDefault()
-        },
+    }
 
-        trigger: function (name, target, data) {
+    global.ihui.trigger = function (name, target, data) {
             var msg = { name: name, target: target, data: data }
             ws.send(JSON.stringify(msg))
         }
-    }
 
-    window.onpopstate = function(event) {
+
+    window.onpopstate = function (event) {
         var msg = event.state
         if (!msg) {
             location.reload()
@@ -157,7 +173,4 @@ function start() {
     }
 }
 
-window.addEventListener("load", function(event){
-    start()
-})
 

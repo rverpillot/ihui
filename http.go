@@ -1,46 +1,16 @@
 package ihui
 
 import (
-	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"path"
-	"text/template"
 
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/websocket"
 )
 
 //go:generate go-bindata-assetfs -pkg ihui -prefix resources/ resources/...
-
-type Event struct {
-	Name   string
-	Id     string
-	Target string
-	Data   interface{}
-}
-
-func (e *Event) Value() string {
-	return e.Data.(string)
-}
-
-func (e *Event) IsChecked() bool {
-	t, ok := e.Data.(bool)
-	if !ok {
-		return false
-	}
-	return t
-}
-
-type ActionFunc func(*Session, Event) bool
-
-func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
-
-type Action struct {
-	Selector string
-	Name     string
-	Fct      ActionFunc
-}
 
 type HTTPHandler struct {
 	assetHandler http.Handler
@@ -91,21 +61,6 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		t, err := template.New(filename).Parse(string(content))
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		h.Path = path.Dir(r.URL.Path)
-
-		err = t.Execute(w, h)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
+		w.Write(content)
 	}
 }
