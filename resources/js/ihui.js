@@ -150,9 +150,8 @@ function start() {
                     evt = "create"
                 }
                 showPage(pageName)
-                if (global.$) {
-                    $(document).trigger("page-" + evt, { page: pageName })
-                }
+                var event = new CustomEvent("page-" + evt, { detail: { page: pageName } })
+                document.dispatchEvent(event)
                 ihui.trigger(evt, "page", pageName)
                 break
 
@@ -160,9 +159,8 @@ function start() {
                 var pageName = msg.Target
                 var page = document.querySelector("#" + pageName)
                 page.parentNode.removeChild(page)
-                if (global.$) {
-                    $(document).trigger("page-remove", { page: pageName })
-                }
+                var event = new CustomEvent("page-remove", { detail: { page: pageName } })
+                document.dispatchEvent(event)
                 ihui.trigger("remove", "page", pageName)
                 break
 
