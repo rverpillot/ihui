@@ -1,6 +1,6 @@
 
 var morphdom = require("morphdom")
-// var J = require("jquery")
+// var $ = require("jquery")
 var $ = require("cash-dom")
 
 var scripts = $('script')
