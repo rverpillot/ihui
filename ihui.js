@@ -1,41 +1,45 @@
 
 var morphdom = require("morphdom")
-var J = require("jquery")
-// var J = require("zepto")
+// var J = require("jquery")
+var $ = require("cash-dom")
 
-var scripts = document.getElementsByTagName('script')
-var myScript = scripts[scripts.length - 1]
+var scripts = $('script')
+var myScript = scripts.last()[0]
 
 function updateHTML(el, html) {
-    if (!el) {
-        return
+    for (var i = 0; i < el.length; i++) {
+        morphdom(el[i], html, {
+            onBeforeElUpdated: function (fromEl, toEl) {
+                if (toEl.classList.contains('noupdate')) {
+                    return false
+                }
+                return true
+            },
+            childrenOnly: true
+        })
     }
-    morphdom(el, html, {
-        onBeforeElUpdated: function (fromEl, toEl) {
-            if (toEl.classList.contains('noupdate')) {
-                return false
-            }
-            return true
-        },
-        childrenOnly: true
-    })
+}
 
+function triggerPageEvent(name, pageName) {
+    var event = new CustomEvent("page-" + name, { detail: { page: pageName } })
+    document.dispatchEvent(event)
+    ihui.trigger(name, "page", pageName)
 }
 
 function showPage(name) {
-    var pages = document.querySelectorAll(".page")
-    for (var i = 0; i < pages.length; i++) {
-        pages[i].style.display = 'none'
-    }
-    document.querySelector(".page#" + name).style.display = ''
+    var pages = $(".page")
+    pages.each(function (index, page) {
+        page.style.display = 'none'
+    })
+    $(".page#" + name)[0].style.display = ''
 }
 
 global.ihui = {}
 
 function start() {
 
-    if (J("#pages").length == 0) {
-        J("body").prepend('<div id="pages"></div>')
+    if ($("#pages").length == 0) {
+        $("body").prepend('<div id="pages"></div>')
     }
     var current_page
 
@@ -50,57 +54,57 @@ function start() {
     var ws = new WebSocket(protocol + location + "/ws");
 
     global.ihui.on = function (event, name, target, e) {
-            var id = J(e).attr("data-id") || J(e).attr("id") || ""
+        var id = $(e).attr("data-id") || $(e).attr("id") || ""
 
-            switch (name) {
-                case "click":
-                    var win = J(e).attr("target") 
-                    var data = J(e).attr("data-value") || J(e).attr("data-id") || J(e).attr("id") || ""  
-                    if (win) {
+        switch (name) {
+            case "click":
+                var win = $(e).attr("target")
+                var data = $(e).attr("data-value") || $(e).attr("data-id") || $(e).attr("id") || ""
+                if (win) {
                     data = { target: win, val: data }
-                        window.open(J(e).attr("href") || "", win)
-                    }
-                    break;
-            
-                case "check":
-                    var data = J(e).prop("checked")
-                    break;
+                    window.open($(e).attr("href") || "", win)
+                }
+                break;
 
-                case "change":
-                    var data = J(e).val()
-                    break;
+            case "check":
+                var data = $(e).prop("checked")
+                break;
 
-                case "form":
-                var data = { name: J(e).attr("name"), val: J(e).val() }
-                    break;
+            case "change":
+                var data = $(e).val()
+                break;
 
-                case "input":
-                    var data = J(e).val()
-                    break;
+            case "form":
+                var data = { name: $(e).attr("name"), val: $(e).val() }
+                break;
 
-                case "submit":
-                var form = J(e).serializeArray()
+            case "input":
+                var data = $(e).val()
+                break;
+
+            case "submit":
+                var form = $(e).serializeArray()
                 var data = {}
                 for (var i = 0; i < form.length; i++) {
                     data[form[i].name] = form[i].value
                 }
-                    break;
+                break;
 
-                default:
-                    return
-            }
-            
-            var msg = { name: name, id: id, target: target, data: data }
-            // console.log(msg)
-            ws.send(JSON.stringify(msg))
-            history.pushState(msg, "")
-            event.preventDefault()
+            default:
+                return
+        }
+
+        var msg = { name: name, id: id, target: target, data: data }
+        // console.log(msg)
+        ws.send(JSON.stringify(msg))
+        history.pushState(msg, "")
+        event.preventDefault()
     }
 
     global.ihui.trigger = function (name, target, data) {
-            var msg = { name: name, target: target, data: data }
-            ws.send(JSON.stringify(msg))
-        }
+        var msg = { name: name, target: target, data: data }
+        ws.send(JSON.stringify(msg))
+    }
 
 
     window.onpopstate = function (event) {
@@ -108,7 +112,7 @@ function start() {
         if (!msg) {
             location.reload()
             return
-        } 
+        }
         // console.log(msg)
         ihui.trigger(msg.name, msg.target, msg.data)
     }
@@ -123,7 +127,7 @@ function start() {
 
         switch (msg.Name) {
             case "update":
-                var el = document.querySelector(msg.Target)
+                var el = $(msg.Target)
                 updateHTML(el, msg.Data)
                 break
 
@@ -138,28 +142,22 @@ function start() {
                     window.scrollTo(0, 0)
                 }
 
-                var page = document.querySelector("#"+pageName)
-
-                if (page) {
+                var page = $("#" + pageName)
+                if (page.length > 0) {
                     updateHTML(page, msg.Data.html)
                     evt = "update"
                 } else {
-                    J("#pages").append(msg.Data.html)
+                    $("#pages").append(msg.Data.html)
                     evt = "create"
                 }
                 showPage(pageName)
-                var event = new CustomEvent("page-" + evt, { detail: { page: pageName } })
-                document.dispatchEvent(event)
-                ihui.trigger(evt, "page", pageName)
+                triggerPageEvent(evt, pageName)
                 break
 
             case "remove":
                 var pageName = msg.Target
-                var page = document.querySelector("#" + pageName)
-                page.parentNode.removeChild(page)
-                var event = new CustomEvent("page-remove", { detail: { page: pageName } })
-                document.dispatchEvent(event)
-                ihui.trigger("remove", "page", pageName)
+                $("#" + pageName).remove()
+                triggerPageEvent("remove", pageName)
                 break
 
             case "script":
