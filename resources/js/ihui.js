@@ -2,8 +2,10 @@
 (function (global){
 
 var morphdom = require("morphdom")
-var $ = require("jquery")
+var J = require("jquery")
 // var $ = require("zepto")
+
+console.log(global)
 
 var scripts = document.getElementsByTagName('script')
 var myScript = scripts[scripts.length - 1]
@@ -36,8 +38,8 @@ global.ihui = {}
 
 function start() {
 
-    if ($("#pages").length == 0) {
-        $("body").prepend('<div id="pages"></div>')
+    if (J("#pages").length == 0) {
+        J("body").prepend('<div id="pages"></div>')
     }
     var current_page
 
@@ -52,36 +54,36 @@ function start() {
     var ws = new WebSocket(protocol + location + "/ws");
 
     global.ihui.on = function (event, name, target, e) {
-            var id = $(e).attr("data-id") || $(e).attr("id") || ""
+            var id = J(e).attr("data-id") || J(e).attr("id") || ""
 
             switch (name) {
                 case "click":
-                    var win = $(e).attr("target") 
-                    var data = $(e).attr("data-value") || $(e).attr("data-id") || $(e).attr("id") || ""  
+                    var win = J(e).attr("target") 
+                    var data = J(e).attr("data-value") || J(e).attr("data-id") || J(e).attr("id") || ""  
                     if (win) {
                     data = { target: win, val: data }
-                        window.open($(e).attr("href") || "", win)
+                        window.open(J(e).attr("href") || "", win)
                     }
                     break;
             
                 case "check":
-                    var data = $(e).prop("checked")
+                    var data = J(e).prop("checked")
                     break;
 
                 case "change":
-                    var data = $(e).val()
+                    var data = J(e).val()
                     break;
 
                 case "form":
-                var data = { name: $(e).attr("name"), val: $(e).val() }
+                var data = { name: J(e).attr("name"), val: J(e).val() }
                     break;
 
                 case "input":
-                    var data = $(e).val()
+                    var data = J(e).val()
                     break;
 
                 case "submit":
-                var form = $(e).serializeArray()
+                var form = J(e).serializeArray()
                 var data = {}
                 for (var i = 0; i < form.length; i++) {
                     data[form[i].name] = form[i].value
@@ -146,11 +148,14 @@ function start() {
                     updateHTML(page, msg.Data.html)
                     evt = "update"
                 } else {
-                    $("#pages").append(msg.Data.html)
+                    J("#pages").append(msg.Data.html)
                     evt = "create"
                 }
                 showPage(pageName)
-                $(document).trigger("page-" + evt, { page: pageName })
+                console.log("trigger:", "page-" + evt, { page: pageName })
+                if (global.$) {
+                    $(document).trigger("page-" + evt, { page: pageName })
+                }
                 ihui.trigger(evt, "page", pageName)
                 break
 
@@ -158,7 +163,9 @@ function start() {
                 var pageName = msg.Target
                 var page = document.querySelector("#" + pageName)
                 page.parentNode.removeChild(page)
-                $(document).trigger("page-remove", { page: pageName })
+                if (global.$) {
+                    $(document).trigger("page-remove", { page: pageName })
+                }
                 ihui.trigger("remove", "page", pageName)
                 break
 
