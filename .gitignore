@@ -3,3 +3,5 @@ node_modules/**
 bin/
 go.sum
 Gopkg.lock
+resources/js/ihui.js
+resources/js/ihui.min.js

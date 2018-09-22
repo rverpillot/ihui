@@ -1,7 +1,7 @@
 
 var morphdom = require("morphdom")
 var J = require("jquery")
-// var $ = require("zepto")
+// var J = require("zepto")
 
 var scripts = document.getElementsByTagName('script')
 var myScript = scripts[scripts.length - 1]

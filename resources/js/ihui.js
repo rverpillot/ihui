@@ -3,9 +3,7 @@
 
 var morphdom = require("morphdom")
 var J = require("jquery")
-// var $ = require("zepto")
-
-console.log(global)
+// var J = require("zepto")
 
 var scripts = document.getElementsByTagName('script')
 var myScript = scripts[scripts.length - 1]
@@ -152,7 +150,6 @@ function start() {
                     evt = "create"
                 }
                 showPage(pageName)
-                console.log("trigger:", "page-" + evt, { page: pageName })
                 if (global.$) {
                     $(document).trigger("page-" + evt, { page: pageName })
                 }
