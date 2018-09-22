@@ -83,11 +83,11 @@ function start() {
                 break;
 
             case "submit":
-                var form = $(e).serializeArray()
                 var data = {}
-                for (var i = 0; i < form.length; i++) {
-                    data[form[i].name] = form[i].value
-                }
+                $(e).find("input[name], textarea[name], select[name]").each(function(index,el){
+                    var name = $(el).attr("name")
+                    data[name] = $(el).val()
+                })
                 break;
 
             default:
