@@ -1,4 +1,4 @@
-module bitbucket.org/rverpi90/ihui
+module github.com/rverpillot/ihui
 
 require (
 	github.com/PuerkitoBio/goquery v1.4.1

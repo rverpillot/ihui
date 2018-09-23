@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"bitbucket.org/rverpi90/ihui"
+	"github.com/rverpillot/ihui"
 )
 
 // Button

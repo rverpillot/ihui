@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"bitbucket.org/rverpi90/ihui"
+	"github.com/rverpillot/ihui"
 )
 
 type Menu struct {
