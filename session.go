@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/satori/go.uuid"
 )
 
 var (
@@ -28,7 +28,7 @@ func GetSession(id string) *Session {
 
 func newSession(ws *websocket.Conn) *Session {
 	session := &Session{
-		id:      uuid.NewV4().String(),
+		id:      uuid.New().String(),
 		params:  make(map[string]interface{}),
 		ws:      ws,
 		countId: make(map[string]int64),
