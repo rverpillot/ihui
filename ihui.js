@@ -27,11 +27,8 @@ function triggerPageEvent(name, pageName) {
 }
 
 function showPage(name) {
-    var pages = $(".page")
-    pages.each(function (index, page) {
-        page.style.display = 'none'
-    })
-    $(".page#" + name)[0].style.display = ''
+    $("#pages > .page").css('display', 'none')
+    $("#pages > .page#" + name).css('display', '')
 }
 
 global.ihui = {}
