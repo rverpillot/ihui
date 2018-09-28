@@ -14,8 +14,10 @@ type Options struct {
 }
 
 type Page interface {
-	WriteString(html string)
 	Write(data []byte) (int, error)
+	WriteString(html string)
+	Read(data []byte) (int, error)
+	Close() error
 	Add(selector string, render PageRenderer) error
 	SetTitle(title string)
 	On(id string, name string, action ActionFunc)
@@ -75,8 +77,28 @@ func (p *PageHTML) Actions() map[string][]Action {
 	return p.actions
 }
 
+func (p *PageHTML) Write(data []byte) (int, error) {
+	return p.buffer.Write(data)
+}
+
+func (p *PageHTML) Read(data []byte) (int, error) {
+	return p.buffer.Read(data)
+}
+
+func (p *PageHTML) Reset() {
+	p.buffer.Reset()
+}
+
+func (p *PageHTML) Close() error {
+	return nil
+}
+
+func (p *PageHTML) WriteString(html string) {
+	p.Write([]byte(html))
+}
+
 func (p *PageHTML) Add(selector string, render PageRenderer) error {
-	doc, err := goquery.NewDocumentFromReader(&p.buffer)
+	doc, err := goquery.NewDocumentFromReader(p)
 	if err != nil {
 		return err
 	}
@@ -87,18 +109,10 @@ func (p *PageHTML) Add(selector string, render PageRenderer) error {
 	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
 		s.SetHtml(html)
 	})
-	p.buffer.Reset()
+	p.Reset()
 	html, _ = doc.Find("body").Html()
-	p.buffer.WriteString(html)
+	p.WriteString(html)
 	return nil
-}
-
-func (p *PageHTML) WriteString(html string) {
-	p.buffer.WriteString(html)
-}
-
-func (p *PageHTML) Write(data []byte) (int, error) {
-	return p.buffer.WriteString(string(data))
 }
 
 func (p *PageHTML) UniqueId(prefix string) string {
