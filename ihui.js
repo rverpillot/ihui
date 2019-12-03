@@ -166,7 +166,7 @@ function start() {
 
     ws.onclose = function (event) {
         console.log("Connection closed.")
-        location.reload()
+        window.location.reload()
     }
 }
 
