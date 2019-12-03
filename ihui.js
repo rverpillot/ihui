@@ -107,7 +107,7 @@ function start() {
     window.onpopstate = function (event) {
         var msg = event.state
         if (!msg) {
-            location.reload()
+            window.location.reload()
             return
         }
         // console.log(msg)
