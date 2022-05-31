@@ -72,7 +72,7 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) b
 	if options == nil {
 		options = &Options{}
 	}
-	if s.page == nil {
+	if s.page == nil { // Main page
 		options.Modal = true
 	}
 
@@ -80,7 +80,7 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) b
 
 	s.page = newHTMLPage(name, drawer, s, *options)
 	if s.page.options.Modal {
-		if err := s.waitEvent(); err != nil {
+		if err := s.display(); err != nil {
 			log.Print(err)
 			return false
 		}
@@ -89,7 +89,7 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) b
 	return true
 }
 
-func (s *Session) waitEvent() error {
+func (s *Session) display() error {
 	actionsHistory := make(map[string][]Action)
 
 	for !s.page.exit {

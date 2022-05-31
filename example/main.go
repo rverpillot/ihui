@@ -40,7 +40,8 @@ func page1(page ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
 	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) bool {
 		log.Println("close!")
-		return session.CloseModalPage()
+		session.CloseModalPage()
+		return true
 	})
 	button.Render(page)
 
@@ -72,16 +73,13 @@ func start(session *ihui.Session) {
 }
 
 func main() {
-
-	h := ihui.NewHTTPHandler(start)
-
-	http.Handle("/", h)
+	http.Handle("/", ihui.NewHTTPHandler(start))
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "9090"
 	}
-	addr := fmt.Sprintf("0.0.0.0:%s", port)
+	addr := fmt.Sprintf("localhost:%s", port)
 	log.Printf("Listen to http://%s", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
