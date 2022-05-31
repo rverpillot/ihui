@@ -1,7 +1,4 @@
 vendor
 node_modules/**
 bin/
-resources/js/ihui.js
-resources/js/ihui.min.js
 .vscode/*.log
-bindata.go
