@@ -61,7 +61,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			filename = path.Join("css", path.Base(r.URL.Path))
 		}
 
-		// log.Println(filename)
+		// log.Printf("GET %s\n", path.Join("resources", filename))
 		content, err := resources.ReadFile(path.Join("resources", filename))
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
