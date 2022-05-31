@@ -1,16 +1,18 @@
 package ihui
 
 import (
+	"embed"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"path"
 
-	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/websocket"
 )
 
-//go:generate go-bindata-assetfs -pkg ihui -prefix resources/ resources/...
+//go:embed resources/*
+var resources embed.FS
 
 type HTTPHandler struct {
 	assetHandler http.Handler
@@ -20,8 +22,12 @@ type HTTPHandler struct {
 }
 
 func NewHTTPHandler(startFunc func(*Session)) *HTTPHandler {
+	fsys, err := fs.Sub(resources, "resources")
+	if err != nil {
+		panic(err)
+	}
 	return &HTTPHandler{
-		assetHandler: http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/"}),
+		assetHandler: http.FileServer(http.FS((fsys))),
 		startFunc:    startFunc,
 		templ:        template.New("main"),
 	}
@@ -55,7 +61,8 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			filename = path.Join("css", path.Base(r.URL.Path))
 		}
 
-		content, err := Asset(filename)
+		// log.Println(filename)
+		content, err := resources.ReadFile(path.Join("resources", filename))
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
