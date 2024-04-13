@@ -1,6 +1,5 @@
 
 var morphdom = require("morphdom")
-// var $ = require("jquery")
 var $ = require("cash-dom")
 
 var scripts = $('script')
@@ -118,11 +117,20 @@ function start() {
         console.log(event)
     }
 
+    ws.onopen = function (event) {
+        var sessionId = localStorage.getItem("sessionId") || ""
+        ws.send(JSON.stringify({ Name: "connect", Id: sessionId }))
+    }
+
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        // console.log(msg)
+        console.log(msg)
 
         switch (msg.Name) {
+            case "init":
+                localStorage.setItem("sessionId", msg.Id)
+                break
+
             case "update":
                 var el = $(msg.Target)
                 updateHTML(el, msg.Data)

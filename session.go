@@ -3,6 +3,7 @@ package ihui
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -14,24 +15,42 @@ var (
 
 type Session struct {
 	id             string
+	date           time.Time
 	params         map[string]interface{}
-	refreshPage    bool
 	ws             *websocket.Conn
 	page           *PageHTML
-	countId        map[string]int64
+	currentId      int64
 	actionsHistory map[string][]Action
 }
 
-func GetSession(id string) *Session {
-	return sessions[id]
+func getSession(id string) *Session {
+	if id == "" {
+		return nil
+	}
+	if session, ok := sessions[id]; ok {
+		return session
+	} else {
+		return nil
+	}
+}
+
+func purgeOldSessions(delay time.Duration) {
+	now := time.Now()
+	for id, session := range sessions {
+		if session.date.Add(delay).Before(now) {
+			session.Close()
+			delete(sessions, id)
+		}
+	}
 }
 
 func newSession(ws *websocket.Conn) *Session {
 	session := &Session{
-		id:      uuid.New().String(),
-		params:  make(map[string]interface{}),
-		ws:      ws,
-		countId: make(map[string]int64),
+		id:        uuid.New().String(),
+		date:      time.Now(),
+		params:    make(map[string]interface{}),
+		ws:        ws,
+		currentId: 0,
 	}
 	sessions[session.id] = session
 	return session
@@ -39,7 +58,6 @@ func newSession(ws *websocket.Conn) *Session {
 
 func (s *Session) Close() {
 	s.ws.Close()
-	delete(sessions, s.id)
 }
 
 func (s *Session) Id() string {
@@ -59,16 +77,12 @@ func (s *Session) CurrentPage() Page {
 }
 
 func (s *Session) UniqueId(prefix string) string {
-	count, ok := s.countId[prefix]
-	if !ok {
-		count = 0
-	}
-	count++
-	s.countId[prefix] = count
-	return fmt.Sprintf("%s%d", prefix, count)
+	s.currentId++
+	return fmt.Sprintf("%s%d", prefix, s.currentId)
 }
 
 func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) bool {
+	s.date = time.Now()
 	if options == nil {
 		options = &Options{}
 	}
@@ -79,6 +93,7 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) b
 	previous := s.page
 
 	s.page = newHTMLPage(name, drawer, s, *options)
+
 	if s.page.options.Modal {
 		if err := s.display(); err != nil {
 			log.Print(err)
@@ -129,13 +144,11 @@ func (s *Session) display() error {
 		}
 	}
 
-	// log.Printf("Remove page %s", s.page.Name)
-	s.RemovePage(s.page)
-
+	s.sendRemovePageEvent(s.page)
 	return nil
 }
 
-func (s *Session) RemovePage(page *PageHTML) error {
+func (s *Session) sendRemovePageEvent(page *PageHTML) error {
 	event := &Event{
 		Name:   "remove",
 		Target: page.Name,
@@ -148,6 +161,7 @@ func (s *Session) RemovePage(page *PageHTML) error {
 }
 
 func (s *Session) Script(script string, args ...interface{}) error {
+	s.date = time.Now()
 	event := &Event{
 		Name: "script",
 		Data: fmt.Sprintf(script, args...),
@@ -166,15 +180,17 @@ func (s *Session) CloseModalPage() bool {
 }
 
 func (s *Session) sendEvent(event *Event) error {
-	if err := websocket.WriteJSON(s.ws, event); err != nil {
+	s.date = time.Now()
+	if err := s.ws.WriteJSON(event); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *Session) recvEvent() (*Event, error) {
+	s.date = time.Now()
 	var event Event
-	if err := websocket.ReadJSON(s.ws, &event); err != nil {
+	if err := s.ws.ReadJSON(&event); err != nil {
 		return nil, err
 	}
 	return &event, nil
