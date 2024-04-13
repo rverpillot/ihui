@@ -58,12 +58,12 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Reconnect to session %s\n", oldSession.id)
 			session = oldSession
 			session.ws = ws
-			session.page = nil
+			session.display()
 		} else {
 			session = newSession(ws)
+			session.sendEvent(&Event{Name: "init", Id: session.Id()})
+			h.startFunc(session)
 		}
-		session.sendEvent(&Event{Name: "init", Id: session.Id()})
-		h.startFunc(session)
 		session.Close()
 		purgeOldSessions(10 * time.Minute)
 
