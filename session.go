@@ -18,7 +18,7 @@ type Session struct {
 	date           time.Time
 	params         map[string]interface{}
 	ws             *websocket.Conn
-	page           *PageHTML
+	pages          []*PageHTML
 	currentId      int64
 	actionsHistory map[string][]Action
 }
@@ -72,8 +72,8 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
-func (s *Session) CurrentPage() Page {
-	return s.page
+func (s *Session) CurrentPage() *PageHTML {
+	return s.pages[len(s.pages)-1]
 }
 
 func (s *Session) UniqueId(prefix string) string {
@@ -81,46 +81,39 @@ func (s *Session) UniqueId(prefix string) string {
 	return fmt.Sprintf("%s%d", prefix, s.currentId)
 }
 
-func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) bool {
+func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) {
 	s.date = time.Now()
 	if options == nil {
 		options = &Options{}
 	}
-	if s.page == nil { // Main page
-		options.Modal = true
+
+	page := newHTMLPage(name, drawer, s, *options)
+
+	if page.options.Modal || len(s.pages) == 0 {
+		s.pages = append(s.pages, page)
+	} else {
+		s.pages[len(s.pages)-1] = page
 	}
-
-	previous := s.page
-
-	s.page = newHTMLPage(name, drawer, s, *options)
-
-	if s.page.options.Modal {
-		if err := s.display(); err != nil {
-			log.Print(err)
-			return false
-		}
-		s.page = previous
-	}
-	return true
 }
 
-func (s *Session) display() error {
+func (s *Session) run() error {
 	actionsHistory := make(map[string][]Action)
 
-	for !s.page.exit {
-		html, err := s.page.Render()
+	for {
+		page := s.CurrentPage()
+		html, err := page.Render()
 		if err != nil {
 			log.Print(err)
 			return err
 		}
 
-		html = fmt.Sprintf(`<div id="%s" class="page" style="display: none">%s</div>`, s.page.Name, html)
+		html = fmt.Sprintf(`<div id="%s" class="page" style="display: none">%s</div>`, page.Name, html)
 
 		event := &Event{
 			Name: "page",
 			Data: map[string]interface{}{
-				"name":  s.page.Name,
-				"title": s.page.Title(),
+				"name":  page.Name,
+				"title": page.Title(),
 				"html":  html,
 			},
 		}
@@ -138,13 +131,12 @@ func (s *Session) display() error {
 				return err
 			}
 
-			if n := s.page.Trigger(*event, actionsHistory); n > 0 {
+			if n := page.Trigger(*event, actionsHistory); n > 0 {
 				break
 			}
 		}
 	}
-
-	s.sendRemovePageEvent(s.page)
+	// s.sendRemovePageEvent(s.page)
 	return nil
 }
 
@@ -173,10 +165,11 @@ func (s *Session) Script(script string, args ...interface{}) error {
 }
 
 func (s *Session) CloseModalPage() bool {
-	if s.page.options.Modal {
-		s.page.exit = true
+	page := s.CurrentPage()
+	if page.options.Modal {
+		s.pages = s.pages[:len(s.pages)-1] // remove last page
 	}
-	return s.page.exit
+	return page.exit
 }
 
 func (s *Session) sendEvent(event *Event) error {

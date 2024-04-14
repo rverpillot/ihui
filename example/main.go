@@ -58,7 +58,8 @@ func tab1(page ihui.Page) {
 func tab2(page ihui.Page) {
 	page.WriteString(`<p>Hello Tab 2</p>`)
 	button := newButton("go page 1", func(session *ihui.Session, event ihui.Event) bool {
-		return session.ShowPage("page1", ihui.PageRendererFunc(page1), &ihui.Options{Title: "Page 1", Modal: true})
+		session.ShowPage("page1", ihui.PageRendererFunc(page1), &ihui.Options{Title: "Page 1", Modal: true})
+		return true
 	})
 	button.Render(page)
 }
