@@ -40,7 +40,6 @@ type PageHTML struct {
 	drawer  PageRenderer
 	buffer  bytes.Buffer
 	options Options
-	exit    bool
 	session *Session
 	actions map[string][]Action
 }

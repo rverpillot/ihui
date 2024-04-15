@@ -21,6 +21,7 @@ type Session struct {
 	pages          []*PageHTML
 	currentId      int64
 	actionsHistory map[string][]Action
+	mustExit       bool
 }
 
 func getSession(id string) *Session {
@@ -58,6 +59,12 @@ func newSession(ws *websocket.Conn) *Session {
 
 func (s *Session) Close() {
 	s.ws.Close()
+}
+
+func (s *Session) Exit() {
+	s.mustExit = true
+	s.Close()
+	delete(sessions, s.id)
 }
 
 func (s *Session) Id() string {
@@ -99,7 +106,8 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) {
 func (s *Session) run() error {
 	actionsHistory := make(map[string][]Action)
 
-	for {
+	for !s.mustExit {
+		s.date = time.Now()
 		page := s.CurrentPage()
 		html, err := page.Render()
 		if err != nil {
@@ -128,6 +136,7 @@ func (s *Session) run() error {
 			// log.Print("Wait event")
 			event, err = s.recvEvent()
 			if err != nil {
+				s.date = time.Now()
 				return err
 			}
 
@@ -135,8 +144,11 @@ func (s *Session) run() error {
 				break
 			}
 		}
+
+		if page != s.CurrentPage() {
+			s.sendRemovePageEvent(page)
+		}
 	}
-	// s.sendRemovePageEvent(s.page)
 	return nil
 }
 
@@ -153,7 +165,6 @@ func (s *Session) sendRemovePageEvent(page *PageHTML) error {
 }
 
 func (s *Session) Script(script string, args ...interface{}) error {
-	s.date = time.Now()
 	event := &Event{
 		Name: "script",
 		Data: fmt.Sprintf(script, args...),
@@ -168,12 +179,12 @@ func (s *Session) CloseModalPage() bool {
 	page := s.CurrentPage()
 	if page.options.Modal {
 		s.pages = s.pages[:len(s.pages)-1] // remove last page
+		return true
 	}
-	return page.exit
+	return false
 }
 
 func (s *Session) sendEvent(event *Event) error {
-	s.date = time.Now()
 	if err := s.ws.WriteJSON(event); err != nil {
 		return err
 	}
@@ -181,7 +192,6 @@ func (s *Session) sendEvent(event *Event) error {
 }
 
 func (s *Session) recvEvent() (*Event, error) {
-	s.date = time.Now()
 	var event Event
 	if err := s.ws.ReadJSON(&event); err != nil {
 		return nil, err
