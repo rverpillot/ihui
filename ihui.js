@@ -97,7 +97,9 @@ function start() {
         var msg = { name: name, id: id, target: target, data: data, refresh: true }
         // console.log(msg)
         ws.send(JSON.stringify(msg))
-        history.pushState(msg, "")
+        if (name == "click") { // TODO: check an history attribute in the message ?
+            history.pushState(msg, "")
+        }
         event.preventDefault()
     }
 

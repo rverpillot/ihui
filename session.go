@@ -145,8 +145,10 @@ func (s *Session) run() error {
 				return err
 			}
 
+			// log.Printf("Event: %+v\n", event)
+
 			s.preventRefresh = false
-			if page.Trigger(*event) && !s.preventRefresh {
+			if page.Trigger(*event) && (event.Refresh && !s.preventRefresh) {
 				break
 			}
 		}

@@ -38,7 +38,7 @@ func (b *Button) Render(page ihui.Page) {
 func page1(page ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
 	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) {
-		log.Println("close!")
+		log.Println("close modal page!")
 		session.CloseModalPage()
 	})
 	button.Render(page)

@@ -119,6 +119,7 @@ func (p *PageHTML) Get(name string) interface{} {
 	return p.session.Get(name)
 }
 
+// Register an action
 func (p *PageHTML) On(eventName string, selector string, action ActionFunc) {
 	if action == nil {
 		return
@@ -126,8 +127,8 @@ func (p *PageHTML) On(eventName string, selector string, action ActionFunc) {
 	p.actions = append(p.actions, Action{Name: eventName, Selector: selector, Fct: action})
 }
 
+// Trigger an event. Return true if the event was handled.
 func (p *PageHTML) Trigger(event Event) bool {
-	var err error
 	numAction := -1
 	if event.Target == "page" {
 		for i, action := range p.actions {
@@ -139,12 +140,12 @@ func (p *PageHTML) Trigger(event Event) bool {
 	} else {
 		fmt.Sscanf(event.Target, "action-%d", &numAction)
 	}
-	if err != nil || numAction < 0 || numAction >= len(p.actions) {
+	if numAction < 0 || numAction >= len(p.actions) {
 		return false
 	}
 	// log.Printf("Execute %+v", event)
 	p.actions[numAction].Fct(p.session, event)
-	return event.Refresh
+	return true
 }
 
 func (p *PageHTML) Render() (string, error) {
@@ -152,6 +153,7 @@ func (p *PageHTML) Render() (string, error) {
 	return p.html(p.drawer)
 }
 
+// Update a part of the page
 func (p *PageHTML) Update(selector string, html string) error {
 	event := &Event{Name: "update", Target: selector, Data: html}
 	if err := p.session.sendEvent(event); err != nil {

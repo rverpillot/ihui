@@ -63,7 +63,9 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			session.sendEvent(&Event{Name: "init", Id: session.Id()})
 			h.startFunc(session)
 		}
-		session.run()
+		if err := session.run(); err != nil {
+			log.Println(err)
+		}
 		session.Close()
 		purgeOldSessions(10 * time.Minute)
 
