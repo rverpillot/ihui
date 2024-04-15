@@ -35,20 +35,20 @@ type PageRenderer interface {
 }
 
 type PageHTML struct {
-	Name    string
-	drawer  PageRenderer
-	buffer  bytes.Buffer
-	options Options
-	session *Session
-	actions []Action
+	Name     string
+	renderer PageRenderer
+	buffer   bytes.Buffer
+	options  Options
+	session  *Session
+	actions  []Action
 }
 
-func newHTMLPage(name string, drawer PageRenderer, session *Session, options Options) *PageHTML {
+func newHTMLPage(name string, renderer PageRenderer, session *Session, options Options) *PageHTML {
 	page := &PageHTML{
-		Name:    name,
-		drawer:  drawer,
-		options: options,
-		session: session,
+		Name:     name,
+		renderer: renderer,
+		options:  options,
+		session:  session,
 	}
 	return page
 }
@@ -149,8 +149,8 @@ func (p *PageHTML) Trigger(event Event) bool {
 }
 
 func (p *PageHTML) Render() (string, error) {
-	p.resetActions()
-	return p.toHtml(p.drawer)
+	p.actions = nil
+	return p.toHtml(nil)
 }
 
 // Update a part of the page
@@ -162,15 +162,13 @@ func (p *PageHTML) Update(selector string, html string) error {
 	return nil
 }
 
-func (p *PageHTML) resetActions() {
-	p.actions = nil
-}
-
 func (page *PageHTML) toHtml(pageRenderer PageRenderer) (string, error) {
 	page.buffer.Reset()
 
 	if pageRenderer != nil {
 		pageRenderer.Render(page)
+	} else {
+		page.renderer.Render(page)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
