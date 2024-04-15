@@ -1,10 +1,11 @@
 package ihui
 
 type Event struct {
-	Name   string
-	Id     string
-	Target string
-	Data   interface{}
+	Name    string
+	Id      string
+	Target  string
+	Refresh bool
+	Data    interface{}
 }
 
 func (e *Event) Value() string {

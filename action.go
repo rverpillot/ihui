@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type ActionFunc func(*Session, Event) bool
+type ActionFunc func(*Session, Event)
 
 func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
 

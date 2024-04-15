@@ -20,8 +20,7 @@ type Session struct {
 	ws             *websocket.Conn
 	pages          []*PageHTML
 	currentId      int64
-	actionsHistory map[string][]Action
-	mustExit       bool
+	preventRefresh bool
 }
 
 func getSession(id string) *Session {
@@ -62,8 +61,8 @@ func (s *Session) Close() {
 }
 
 func (s *Session) Exit() {
-	s.mustExit = true
 	s.Close()
+	s.pages = nil
 	delete(sessions, s.id)
 }
 
@@ -80,6 +79,9 @@ func (s *Session) Get(name string) interface{} {
 }
 
 func (s *Session) CurrentPage() *PageHTML {
+	if len(s.pages) == 0 {
+		return nil
+	}
 	return s.pages[len(s.pages)-1]
 }
 
@@ -104,11 +106,14 @@ func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) {
 }
 
 func (s *Session) run() error {
-	actionsHistory := make(map[string][]Action)
-
-	for !s.mustExit {
+	for {
 		s.date = time.Now()
+
 		page := s.CurrentPage()
+		if page == nil {
+			break
+		}
+
 		html, err := page.Render()
 		if err != nil {
 			log.Print(err)
@@ -140,13 +145,10 @@ func (s *Session) run() error {
 				return err
 			}
 
-			if n := page.Trigger(*event, actionsHistory); n > 0 {
+			s.preventRefresh = false
+			if page.Trigger(*event) && !s.preventRefresh {
 				break
 			}
-		}
-
-		if page != s.CurrentPage() {
-			s.sendRemovePageEvent(page)
 		}
 	}
 	return nil
@@ -175,13 +177,26 @@ func (s *Session) Script(script string, args ...interface{}) error {
 	return nil
 }
 
+func (s *Session) ClosePage() {
+	page := s.CurrentPage()
+	if page != nil {
+		s.sendRemovePageEvent(page)
+		s.pages = s.pages[:len(s.pages)-1] // remove last page
+	}
+}
+
 func (s *Session) CloseModalPage() bool {
 	page := s.CurrentPage()
-	if page.options.Modal {
+	if page != nil && page.options.Modal {
+		s.sendRemovePageEvent(page)
 		s.pages = s.pages[:len(s.pages)-1] // remove last page
 		return true
 	}
 	return false
+}
+
+func (s *Session) PreventRefresh() {
+	s.preventRefresh = true
 }
 
 func (s *Session) sendEvent(event *Event) error {

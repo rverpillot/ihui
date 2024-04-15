@@ -21,10 +21,14 @@ function updateHTML(el, html) {
     }
 }
 
-function triggerPageEvent(name, pageName) {
+function triggerPageEvent(name, pageName, refresh=true) {
+    if (name == null || name == "") {
+        return
+    } 
     var event = new CustomEvent("page-" + name, { detail: { page: pageName } })
+    // console.log(event)
     document.dispatchEvent(event)
-    ihui.trigger(name, "page", pageName)
+    ihui.trigger(name, "page", pageName, refresh)
 }
 
 function showPage(name) {
@@ -92,15 +96,15 @@ function start() {
                 return
         }
 
-        var msg = { name: name, id: id, target: target, data: data }
+        var msg = { name: name, id: id, target: target, data: data, refresh: true }
         // console.log(msg)
         ws.send(JSON.stringify(msg))
         history.pushState(msg, "")
         event.preventDefault()
     }
 
-    global.ihui.trigger = function (name, target, data) {
-        var msg = { name: name, target: target, data: data }
+    global.ihui.trigger = function (name, target, data, refresh=true) {
+        var msg = { name: name, target: target, data: data, refresh: refresh}
         ws.send(JSON.stringify(msg))
     }
 
@@ -126,7 +130,7 @@ function start() {
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        console.log(msg)
+        // console.log(msg)
 
         switch (msg.Name) {
             case "init":
@@ -143,28 +147,30 @@ function start() {
                     document.title = msg.Data.title
                 }
 
+                var evt = null
+
                 var pageName = msg.Data.name
                 if (pageName != current_page) {
                     current_page = pageName
                     window.scrollTo(0, 0)
                 }
-
+                
                 var page = $("#" + pageName)
                 if (page.length > 0) {
                     updateHTML(page, msg.Data.html)
-                    evt = "update"
+                    evt = "updated"
                 } else {
                     $("#pages").append(msg.Data.html)
-                    evt = "create"
+                    evt = "created"
                 }
                 showPage(pageName)
-                triggerPageEvent(evt, pageName)
+                triggerPageEvent(evt, pageName, false)
                 break
 
             case "remove":
                 var pageName = msg.Target
                 $("#" + pageName).remove()
-                triggerPageEvent("remove", pageName)
+                triggerPageEvent("removed", pageName)
                 break
 
             case "script":
