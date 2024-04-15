@@ -9,21 +9,35 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	sessionTimeout = 10 * time.Minute
+)
+
 var (
 	sessions = make(map[string]*Session)
 )
 
 type Session struct {
-	id             string
-	date           time.Time
-	params         map[string]interface{}
-	ws             *websocket.Conn
-	pages          []*PageHTML
-	currentId      int64
-	preventRefresh bool
+	id            string
+	date          time.Time
+	params        map[string]interface{}
+	ws            *websocket.Conn
+	pages         []*PageHTML
+	currentId     int64
+	noPageRefresh bool
 }
 
-func getSession(id string) *Session {
+func purgeOldSessions() {
+	now := time.Now()
+	for _, session := range sessions {
+		if session.date.Add(sessionTimeout).Before(now) {
+			session.close()
+		}
+	}
+}
+
+func GetSession(id string) *Session {
+	purgeOldSessions()
 	if id == "" {
 		return nil
 	}
@@ -34,34 +48,18 @@ func getSession(id string) *Session {
 	}
 }
 
-func purgeOldSessions(delay time.Duration) {
-	now := time.Now()
-	for id, session := range sessions {
-		if session.date.Add(delay).Before(now) {
-			session.Close()
-			delete(sessions, id)
-		}
-	}
-}
-
-func newSession(ws *websocket.Conn) *Session {
+func newSession() *Session {
 	session := &Session{
 		id:        uuid.New().String(),
 		date:      time.Now(),
 		params:    make(map[string]interface{}),
-		ws:        ws,
 		currentId: 0,
 	}
 	sessions[session.id] = session
 	return session
 }
 
-func (s *Session) Close() {
-	s.ws.Close()
-}
-
-func (s *Session) Exit() {
-	s.Close()
+func (s *Session) close() {
 	s.pages = nil
 	delete(sessions, s.id)
 }
@@ -132,14 +130,14 @@ func (s *Session) run() error {
 		}
 
 		// log.Printf("Display page %s", s.page.Name)
-		err = s.sendEvent(event)
+		err = s.SendEvent(event)
 		if err != nil {
 			return err
 		}
 
 		for {
 			// log.Print("Wait event")
-			event, err = s.recvEvent()
+			event, err = s.RecvEvent()
 			if err != nil {
 				s.date = time.Now()
 				return err
@@ -147,8 +145,8 @@ func (s *Session) run() error {
 
 			// log.Printf("Event: %+v\n", event)
 
-			s.preventRefresh = false
-			if page.Trigger(*event) && (event.Refresh && !s.preventRefresh) {
+			s.noPageRefresh = false
+			if page.Trigger(*event) && (event.Refresh && !s.noPageRefresh) {
 				break
 			}
 		}
@@ -161,7 +159,7 @@ func (s *Session) sendRemovePageEvent(page *PageHTML) error {
 		Name:   "remove",
 		Target: page.Name,
 	}
-	if err := s.sendEvent(event); err != nil {
+	if err := s.SendEvent(event); err != nil {
 		log.Print(err)
 		return err
 	}
@@ -173,7 +171,7 @@ func (s *Session) Script(script string, args ...interface{}) error {
 		Name: "script",
 		Data: fmt.Sprintf(script, args...),
 	}
-	if err := s.sendEvent(event); err != nil {
+	if err := s.SendEvent(event); err != nil {
 		return err
 	}
 	return nil
@@ -197,18 +195,18 @@ func (s *Session) CloseModalPage() bool {
 	return false
 }
 
-func (s *Session) PreventRefresh() {
-	s.preventRefresh = true
+func (s *Session) PreventPageRefresh() {
+	s.noPageRefresh = true
 }
 
-func (s *Session) sendEvent(event *Event) error {
+func (s *Session) SendEvent(event *Event) error {
 	if err := s.ws.WriteJSON(event); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Session) recvEvent() (*Event, error) {
+func (s *Session) RecvEvent() (*Event, error) {
 	var event Event
 	if err := s.ws.ReadJSON(&event); err != nil {
 		return nil, err

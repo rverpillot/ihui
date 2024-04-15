@@ -25,17 +25,12 @@ func newButton(label string, action ihui.ActionFunc) *Button {
 
 func (b *Button) Render(page ihui.Page) {
 	b.id = page.UniqueId("id-")
-	html := fmt.Sprintf(`<button id="%s">%s</button>`, b.id, b.label)
-	page.WriteString(html)
-	sel := "[id=" + b.id + "]"
-	page.On("click", sel, func(session *ihui.Session, event ihui.Event) {
-		log.Printf("click button! %s", event.Id)
-	})
-	page.On("click", sel, b.action)
+	fmt.Fprintf(page, `<button id="%s">%s</button>`, b.id, b.label)
+	page.On("click", "[id="+b.id+"]", b.action)
 }
 
 // Pages
-func page1(page ihui.Page) {
+func modal1(page ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
 	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) {
 		log.Println("close modal page!")
@@ -55,7 +50,7 @@ func tab1(page ihui.Page) {
 func tab2(page ihui.Page) {
 	page.WriteString(`<p>Hello Tab 2</p>`)
 	button := newButton("go page 1", func(session *ihui.Session, event ihui.Event) {
-		session.ShowPage("page1", ihui.PageRendererFunc(page1), &ihui.Options{Title: "Page 1", Modal: true})
+		session.ShowPage("page1", ihui.PageRendererFunc(modal1), &ihui.Options{Title: "Page 1", Modal: true})
 	})
 	button.Render(page)
 }

@@ -77,6 +77,10 @@ func (p *PageHTML) Write(data []byte) (int, error) {
 	return p.buffer.Write(data)
 }
 
+func (p *PageHTML) WriteString(html string) {
+	p.Write([]byte(html))
+}
+
 func (p *PageHTML) Read(data []byte) (int, error) {
 	return p.buffer.Read(data)
 }
@@ -89,16 +93,12 @@ func (p *PageHTML) Close() error {
 	return nil
 }
 
-func (p *PageHTML) WriteString(html string) {
-	p.Write([]byte(html))
-}
-
-func (p *PageHTML) Add(selector string, render PageRenderer) error {
+func (p *PageHTML) Add(selector string, part PageRenderer) error {
 	doc, err := goquery.NewDocumentFromReader(p)
 	if err != nil {
 		return err
 	}
-	html, err := p.html(render)
+	html, err := p.toHtml(part)
 	if err != nil {
 		return err
 	}
@@ -150,13 +150,13 @@ func (p *PageHTML) Trigger(event Event) bool {
 
 func (p *PageHTML) Render() (string, error) {
 	p.resetActions()
-	return p.html(p.drawer)
+	return p.toHtml(p.drawer)
 }
 
 // Update a part of the page
 func (p *PageHTML) Update(selector string, html string) error {
 	event := &Event{Name: "update", Target: selector, Data: html}
-	if err := p.session.sendEvent(event); err != nil {
+	if err := p.session.SendEvent(event); err != nil {
 		return err
 	}
 	return nil
@@ -166,11 +166,11 @@ func (p *PageHTML) resetActions() {
 	p.actions = nil
 }
 
-func (page *PageHTML) html(drawer PageRenderer) (string, error) {
+func (page *PageHTML) toHtml(pageRenderer PageRenderer) (string, error) {
 	page.buffer.Reset()
 
-	if drawer != nil {
-		drawer.Render(page)
+	if pageRenderer != nil {
+		pageRenderer.Render(page)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)

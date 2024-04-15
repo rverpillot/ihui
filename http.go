@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"path"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -46,6 +45,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
+		defer ws.Close()
 
 		var event Event
 		if err := ws.ReadJSON(&event); err != nil || event.Name != "connect" {
@@ -54,20 +54,18 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var session *Session
-		if oldSession := getSession(event.Id); oldSession != nil && len(oldSession.pages) > 0 {
+		if oldSession := GetSession(event.Id); oldSession != nil && len(oldSession.pages) > 0 {
 			log.Printf("Reconnect to session %s\n", oldSession.id)
 			session = oldSession
-			session.ws = ws
 		} else {
-			session = newSession(ws)
-			session.sendEvent(&Event{Name: "init", Id: session.Id()})
+			session = newSession()
+			session.SendEvent(&Event{Name: "init", Id: session.Id()})
 			h.startFunc(session)
 		}
+		session.ws = ws
 		if err := session.run(); err != nil {
 			log.Println(err)
 		}
-		session.Close()
-		purgeOldSessions(10 * time.Minute)
 
 	} else {
 		filename := "index.html"
