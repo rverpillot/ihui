@@ -26,7 +26,7 @@ type Page struct {
 	buffer   bytes.Buffer
 	options  Options
 	session  *Session
-	actions  []Action
+	actions  map[string]Action
 }
 
 func newPage(id string, renderer HTMLRenderer, session *Session, options Options) *Page {
@@ -53,10 +53,6 @@ func (p *Page) Session() *Session {
 
 func (p *Page) Modal() bool {
 	return p.options.Modal
-}
-
-func (p *Page) Actions() []Action {
-	return p.actions
 }
 
 func (p *Page) Write(data []byte) (int, error) {
@@ -112,38 +108,38 @@ func (p *Page) Get(name string) interface{} {
 }
 
 // Register an action
-func (p *Page) On(eventName string, selector string, action ActionFunc) {
-	if action == nil {
+func (p *Page) On(eventName string, selector string, action ActionCallback) {
+	if p.actions == nil || action == nil {
 		return
 	}
-	p.actions = append(p.actions, Action{Name: eventName, Selector: selector, Fct: action})
+	p.actions[action.String()] = Action{Name: eventName, Selector: selector, Fct: action}
 }
 
-// Trigger an event. Return true if the event was handled.
-func (p *Page) Trigger(event Event) bool {
-	numAction := -1
+// trigger an event. Return true if the event was handled.
+func (p *Page) trigger(event Event) bool {
+	idAction := ""
 	if event.Target == "page" {
-		for i, action := range p.actions {
+		for id, action := range p.actions {
 			if action.Name == event.Name && action.Selector == "page" {
-				numAction = i
+				idAction = id
 				break
 			}
 		}
 	} else {
-		fmt.Sscanf(event.Target, "action-%d", &numAction)
+		idAction = event.Target
 	}
-	if numAction < 0 || numAction >= len(p.actions) {
+	if idAction == "" {
 		return false
 	}
 	// log.Printf("Execute %+v", event)
-	p.actions[numAction].Fct(p.session, event)
+	p.actions[idAction].Fct(p.session, event)
 	return true
 }
 
 // Draw the page
 func (p *Page) Draw() error {
+	p.actions = make(map[string]Action)
 	p.buffer.Reset()
-	p.actions = nil
 	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: none">`, p.Id))
 	html, err := p.toHtml(nil)
 	if err != nil {
@@ -180,36 +176,36 @@ func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
 		return "", err
 	}
 
-	addAction := func(s *goquery.Selection, name string, evname string, numAction int) {
-		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","action-%d",this);`, evname, numAction))
+	addAction := func(s *goquery.Selection, name string, evname string, idAction string) {
+		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","%s",this);`, evname, idAction))
 	}
 
-	for num, action := range page.actions {
+	for id, action := range page.actions {
 		if action.Selector == "page" {
 			continue
 		}
 		doc.Find(action.Selector).Each(func(i int, s *goquery.Selection) {
 			switch action.Name {
 			case "click":
-				addAction(s, "onclick", action.Name, num)
+				addAction(s, "onclick", action.Name, id)
 
 			case "check":
-				addAction(s, "onchange", action.Name, num)
+				addAction(s, "onchange", action.Name, id)
 
 			case "change":
-				addAction(s, "onchange", action.Name, num)
+				addAction(s, "onchange", action.Name, id)
 
 			case "input":
-				addAction(s, "oninput", action.Name, num)
+				addAction(s, "oninput", action.Name, id)
 
 			case "submit":
-				addAction(s, "onsubmit", action.Name, num)
+				addAction(s, "onsubmit", action.Name, id)
 				s.SetAttr("method", "post")
 				s.SetAttr("action", "")
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					addAction(ss, "onchange", action.Name, num)
+					addAction(ss, "onchange", action.Name, id)
 				})
 			}
 		})

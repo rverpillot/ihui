@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-type ActionFunc func(*Session, Event)
+type ActionCallback func(*Session, Event)
 
-func (f ActionFunc) String() string { return fmt.Sprintf("#%p", f) }
+func (f ActionCallback) String() string { return fmt.Sprintf("#%p", f) }
 
 type Action struct {
 	Selector string
 	Name     string
-	Fct      ActionFunc
+	Fct      ActionCallback
 }

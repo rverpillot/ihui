@@ -13,10 +13,10 @@ import (
 type Button struct {
 	id     string
 	label  string
-	action ihui.ActionFunc
+	action ihui.ActionCallback
 }
 
-func newButton(label string, action ihui.ActionFunc) *Button {
+func newButton(label string, action ihui.ActionCallback) *Button {
 	return &Button{
 		label:  label,
 		action: action,
