@@ -32,7 +32,7 @@ type Page struct {
 
 func newPage(id string, renderer HTMLRenderer, session *Session, options Options) *Page {
 	if options.Target == "" {
-		options.Target = "#pages"
+		options.Target = "body"
 	}
 	page := &Page{
 		Id:       id,
@@ -80,7 +80,7 @@ func (p *Page) Close() error {
 	p.session.removePage(p)
 	return p.session.SendEvent(&Event{
 		Name:   "remove",
-		Id:     p.Id,
+		Page:   p.Id,
 		Target: p.options.Target,
 	})
 }
@@ -154,7 +154,7 @@ func (p *Page) Draw() error {
 	// log.Printf("Draw page %s", p.Name)
 	return p.session.SendEvent(&Event{
 		Name:   "page",
-		Id:     p.Id,
+		Page:   p.Id,
 		Target: p.options.Target,
 		Data: map[string]interface{}{
 			"title": p.Title(),
@@ -165,7 +165,7 @@ func (p *Page) Draw() error {
 
 // Show the page
 func (p *Page) Show() {
-	p.session.showPage(p)
+	p.session.addPage(p)
 }
 
 func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
@@ -180,8 +180,8 @@ func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
 		return "", err
 	}
 
-	addAction := func(s *goquery.Selection, name string, evname string, idAction int) {
-		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","action-%d",this);`, evname, idAction))
+	addAction := func(s *goquery.Selection, name string, evname string, pageId string, idAction int) {
+		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","%s","action-%d",this);`, evname, pageId, idAction))
 	}
 
 	for id, action := range page.actions {
@@ -191,25 +191,25 @@ func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
 		doc.Find(action.Selector).Each(func(i int, s *goquery.Selection) {
 			switch action.Name {
 			case "click":
-				addAction(s, "onclick", action.Name, id)
+				addAction(s, "onclick", action.Name, page.Id, id)
 
 			case "check":
-				addAction(s, "onchange", action.Name, id)
+				addAction(s, "onchange", action.Name, page.Id, id)
 
 			case "change":
-				addAction(s, "onchange", action.Name, id)
+				addAction(s, "onchange", action.Name, page.Id, id)
 
 			case "input":
-				addAction(s, "oninput", action.Name, id)
+				addAction(s, "oninput", action.Name, page.Id, id)
 
 			case "submit":
-				addAction(s, "onsubmit", action.Name, id)
+				addAction(s, "onsubmit", action.Name, page.Id, id)
 				s.SetAttr("method", "post")
 				s.SetAttr("action", "")
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					addAction(ss, "onchange", action.Name, id)
+					addAction(ss, "onchange", action.Name, page.Id, id)
 				})
 			}
 		})

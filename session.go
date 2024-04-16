@@ -20,11 +20,11 @@ type Session struct {
 	id            string
 	date          time.Time
 	params        map[string]interface{}
+	pages         map[string]*Page
+	page_modal    *Page
 	ws            *websocket.Conn
-	pages         []*Page
 	currentId     int64
 	noPageRefresh bool
-	pages_history map[string]*Page
 }
 
 func purgeOldSessions() {
@@ -50,11 +50,11 @@ func GetSession(id string) *Session {
 
 func newSession() *Session {
 	session := &Session{
-		id:            uuid.New().String(),
-		date:          time.Now(),
-		params:        make(map[string]interface{}),
-		currentId:     0,
-		pages_history: make(map[string]*Page),
+		id:        uuid.New().String(),
+		date:      time.Now(),
+		params:    make(map[string]interface{}),
+		pages:     make(map[string]*Page),
+		currentId: 0,
 	}
 	sessions[session.id] = session
 	return session
@@ -77,40 +77,23 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
-func (s *Session) CurrentPage() *Page {
-	if len(s.pages) == 0 {
-		return nil
-	}
-	return s.pages[len(s.pages)-1]
-}
-
 func (s *Session) UniqueId(prefix string) string {
 	s.currentId++
 	return fmt.Sprintf("%s%d", prefix, s.currentId)
 }
 
-func (s *Session) showPage(page *Page) {
-	if page.options.Modal || len(s.pages) == 0 {
-		s.pages = append(s.pages, page)
-	} else {
-		s.pages[len(s.pages)-1] = page
+func (s *Session) addPage(page *Page) {
+	if page.options.Modal {
+		s.page_modal = page
 	}
-	s.pages_history[page.Id] = page
+	s.pages[page.Id] = page
 }
 
-func (s *Session) findPage(page *Page) int {
-	for i, p := range s.pages {
-		if p == page {
-			return i
-		}
-	}
-	return -1
-}
 func (s *Session) removePage(page *Page) {
-	i := s.findPage(page)
-	if i >= 0 {
-		s.pages = append(s.pages[:i], s.pages[i+1:]...)
+	if page == s.page_modal {
+		s.page_modal = nil
 	}
+	delete(s.pages, page.Id)
 }
 
 func (s *Session) CreatePage(name string, drawer HTMLRenderer, options *Options) *Page {
@@ -128,13 +111,16 @@ func (s *Session) run() error {
 	for {
 		s.date = time.Now()
 
-		page := s.CurrentPage()
-		if page == nil {
-			break
-		}
-
-		if err := page.Draw(); err != nil {
-			return err
+		if s.page_modal != nil {
+			if err := s.page_modal.Draw(); err != nil {
+				return err
+			}
+		} else {
+			for _, page := range s.pages {
+				if err := page.Draw(); err != nil {
+					return err
+				}
+			}
 		}
 
 		for {
@@ -147,13 +133,22 @@ func (s *Session) run() error {
 
 			// log.Printf("Event: %+v\n", event)
 
+			page, ok := s.pages[event.Page]
+			if !ok {
+				continue
+			}
+
+			// Ignore event if it is not for the modal page
+			if s.page_modal != nil && page.Id != s.page_modal.Id {
+				continue
+			}
+
 			s.noPageRefresh = false
 			if page.trigger(*event) && (event.Refresh && !s.noPageRefresh) {
 				break
 			}
 		}
 	}
-	return nil
 }
 
 func (s *Session) PreventPageRefresh() {
