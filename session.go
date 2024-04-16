@@ -2,7 +2,6 @@ package ihui
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,7 +21,7 @@ type Session struct {
 	date          time.Time
 	params        map[string]interface{}
 	ws            *websocket.Conn
-	pages         []*PageHTML
+	pages         []*Page
 	currentId     int64
 	noPageRefresh bool
 }
@@ -76,7 +75,7 @@ func (s *Session) Get(name string) interface{} {
 	return s.params[name]
 }
 
-func (s *Session) CurrentPage() *PageHTML {
+func (s *Session) CurrentPage() *Page {
 	if len(s.pages) == 0 {
 		return nil
 	}
@@ -88,19 +87,38 @@ func (s *Session) UniqueId(prefix string) string {
 	return fmt.Sprintf("%s%d", prefix, s.currentId)
 }
 
-func (s *Session) ShowPage(name string, drawer PageRenderer, options *Options) {
-	s.date = time.Now()
-	if options == nil {
-		options = &Options{}
-	}
-
-	page := newHTMLPage(name, drawer, s, *options)
-
+func (s *Session) showPage(page *Page) {
 	if page.options.Modal || len(s.pages) == 0 {
 		s.pages = append(s.pages, page)
 	} else {
 		s.pages[len(s.pages)-1] = page
 	}
+}
+
+func (s *Session) findPage(page *Page) int {
+	for i, p := range s.pages {
+		if p == page {
+			return i
+		}
+	}
+	return -1
+}
+func (s *Session) removePage(page *Page) {
+	i := s.findPage(page)
+	if i >= 0 {
+		s.pages = append(s.pages[:i], s.pages[i+1:]...)
+	}
+}
+
+func (s *Session) CreatePage(name string, drawer HTMLRenderer, options *Options) *Page {
+	if options == nil {
+		options = &Options{}
+	}
+	return newPage(name, drawer, s, *options)
+}
+
+func (s *Session) ShowPage(name string, renderer HTMLRenderer, options *Options) {
+	s.CreatePage(name, renderer, options).Show()
 }
 
 func (s *Session) run() error {
@@ -112,32 +130,13 @@ func (s *Session) run() error {
 			break
 		}
 
-		html, err := page.Render()
-		if err != nil {
-			log.Print(err)
-			return err
-		}
-
-		html = fmt.Sprintf(`<div id="%s" class="page" style="display: none">%s</div>`, page.Name, html)
-
-		event := &Event{
-			Name: "page",
-			Data: map[string]interface{}{
-				"name":  page.Name,
-				"title": page.Title(),
-				"html":  html,
-			},
-		}
-
-		// log.Printf("Display page %s", s.page.Name)
-		err = s.SendEvent(event)
-		if err != nil {
+		if err := page.Draw(); err != nil {
 			return err
 		}
 
 		for {
 			// log.Print("Wait event")
-			event, err = s.RecvEvent()
+			event, err := s.RecvEvent()
 			if err != nil {
 				s.date = time.Now()
 				return err
@@ -154,42 +153,10 @@ func (s *Session) run() error {
 	return nil
 }
 
-func (s *Session) sendRemovePageEvent(page *PageHTML) error {
-	event := &Event{
-		Name:   "remove",
-		Target: page.Name,
-	}
-	if err := s.SendEvent(event); err != nil {
-		log.Print(err)
-		return err
-	}
-	return nil
-}
-
-func (s *Session) Script(script string, args ...interface{}) error {
-	event := &Event{
-		Name: "script",
-		Data: fmt.Sprintf(script, args...),
-	}
-	if err := s.SendEvent(event); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Session) ClosePage() {
-	page := s.CurrentPage()
-	if page != nil {
-		s.sendRemovePageEvent(page)
-		s.pages = s.pages[:len(s.pages)-1] // remove last page
-	}
-}
-
 func (s *Session) CloseModalPage() bool {
 	page := s.CurrentPage()
 	if page != nil && page.options.Modal {
-		s.sendRemovePageEvent(page)
-		s.pages = s.pages[:len(s.pages)-1] // remove last page
+		page.Close()
 		return true
 	}
 	return false
@@ -212,4 +179,25 @@ func (s *Session) RecvEvent() (*Event, error) {
 		return nil, err
 	}
 	return &event, nil
+}
+
+// Execute a script on the client side
+func (s *Session) Script(script string, args ...interface{}) error {
+	event := &Event{
+		Name: "script",
+		Data: fmt.Sprintf(script, args...),
+	}
+	if err := s.SendEvent(event); err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateHtml directly update the content of the element with the given selector
+func (s *Session) UpdateHtml(selector string, html string) error {
+	event := &Event{Name: "update", Target: selector, Data: html}
+	if err := s.SendEvent(event); err != nil {
+		return err
+	}
+	return nil
 }

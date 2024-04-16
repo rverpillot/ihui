@@ -12,40 +12,26 @@ type Options struct {
 	Modal bool
 }
 
-type Page interface {
-	Write(data []byte) (int, error)
-	WriteString(html string)
-	Read(data []byte) (int, error)
-	Close() error
-	Add(selector string, render PageRenderer) error
-	SetTitle(title string)
-	On(id string, name string, action ActionFunc)
-	Session() *Session
-	Update(selector string, html string) error
-	Get(name string) interface{}
-	UniqueId(prefix string) string
+type HTMLRendererFunc func(*Page)
+
+func (f HTMLRendererFunc) Render(page *Page) { f(page) }
+
+type HTMLRenderer interface {
+	Render(*Page)
 }
 
-type PageRendererFunc func(Page)
-
-func (f PageRendererFunc) Render(page Page) { f(page) }
-
-type PageRenderer interface {
-	Render(Page)
-}
-
-type PageHTML struct {
-	Name     string
-	renderer PageRenderer
+type Page struct {
+	Id       string
+	renderer HTMLRenderer
 	buffer   bytes.Buffer
 	options  Options
 	session  *Session
 	actions  []Action
 }
 
-func newHTMLPage(name string, renderer PageRenderer, session *Session, options Options) *PageHTML {
-	page := &PageHTML{
-		Name:     name,
+func newPage(id string, renderer HTMLRenderer, session *Session, options Options) *Page {
+	page := &Page{
+		Id:       id,
 		renderer: renderer,
 		options:  options,
 		session:  session,
@@ -53,47 +39,52 @@ func newHTMLPage(name string, renderer PageRenderer, session *Session, options O
 	return page
 }
 
-func (p *PageHTML) Title() string {
+func (p *Page) Title() string {
 	return p.options.Title
 }
 
-func (p *PageHTML) SetTitle(title string) {
+func (p *Page) SetTitle(title string) {
 	p.options.Title = title
 }
 
-func (p *PageHTML) Session() *Session {
+func (p *Page) Session() *Session {
 	return p.session
 }
 
-func (p *PageHTML) Modal() bool {
+func (p *Page) Modal() bool {
 	return p.options.Modal
 }
 
-func (p *PageHTML) Actions() []Action {
+func (p *Page) Actions() []Action {
 	return p.actions
 }
 
-func (p *PageHTML) Write(data []byte) (int, error) {
+func (p *Page) Write(data []byte) (int, error) {
 	return p.buffer.Write(data)
 }
 
-func (p *PageHTML) WriteString(html string) {
+func (p *Page) WriteString(html string) {
 	p.Write([]byte(html))
 }
 
-func (p *PageHTML) Read(data []byte) (int, error) {
+func (p *Page) Read(data []byte) (int, error) {
 	return p.buffer.Read(data)
 }
 
-func (p *PageHTML) Reset() {
+func (p *Page) Reset() {
 	p.buffer.Reset()
 }
 
-func (p *PageHTML) Close() error {
-	return nil
+func (p *Page) Close() error {
+	p.Reset()
+	p.session.removePage(p)
+	return p.session.SendEvent(&Event{
+		Name:   "remove",
+		Target: p.Id,
+	})
 }
 
-func (p *PageHTML) Add(selector string, part PageRenderer) error {
+func (p *Page) Add(selector string, part HTMLRenderer) error {
 	doc, err := goquery.NewDocumentFromReader(p)
 	if err != nil {
 		return err
@@ -111,16 +102,16 @@ func (p *PageHTML) Add(selector string, part PageRenderer) error {
 	return nil
 }
 
-func (p *PageHTML) UniqueId(prefix string) string {
+func (p *Page) UniqueId(prefix string) string {
 	return p.session.UniqueId(prefix)
 }
 
-func (p *PageHTML) Get(name string) interface{} {
+func (p *Page) Get(name string) interface{} {
 	return p.session.Get(name)
 }
 
 // Register an action
-func (p *PageHTML) On(eventName string, selector string, action ActionFunc) {
+func (p *Page) On(eventName string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
@@ -128,7 +119,7 @@ func (p *PageHTML) On(eventName string, selector string, action ActionFunc) {
 }
 
 // Trigger an event. Return true if the event was handled.
-func (p *PageHTML) Trigger(event Event) bool {
+func (p *Page) Trigger(event Event) bool {
 	numAction := -1
 	if event.Target == "page" {
 		for i, action := range p.actions {
@@ -148,21 +139,33 @@ func (p *PageHTML) Trigger(event Event) bool {
 	return true
 }
 
-func (p *PageHTML) Render() (string, error) {
+// Draw the page
+func (p *Page) Draw() error {
 	p.actions = nil
-	return p.toHtml(nil)
-}
-
-// Update a part of the page
-func (p *PageHTML) Update(selector string, html string) error {
-	event := &Event{Name: "update", Target: selector, Data: html}
-	if err := p.session.SendEvent(event); err != nil {
+	html, err := p.toHtml(nil)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	html = fmt.Sprintf(`<div id="%s" class="page" style="display: none">%s</div>`, p.Id, html)
+
+	// log.Printf("Draw page %s", p.Name)
+	return p.session.SendEvent(&Event{
+		Name: "page",
+		Data: map[string]interface{}{
+			"id":    p.Id,
+			"title": p.Title(),
+			"html":  html,
+		},
+	})
 }
 
-func (page *PageHTML) toHtml(pageRenderer PageRenderer) (string, error) {
+// Show the page
+func (p *Page) Show() {
+	p.session.showPage(p)
+}
+
+func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
 	page.buffer.Reset()
 
 	if pageRenderer != nil {
