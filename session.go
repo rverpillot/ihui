@@ -153,15 +153,6 @@ func (s *Session) run() error {
 	return nil
 }
 
-func (s *Session) CloseModalPage() bool {
-	page := s.CurrentPage()
-	if page != nil && page.options.Modal {
-		page.Close()
-		return true
-	}
-	return false
-}
-
 func (s *Session) PreventPageRefresh() {
 	s.noPageRefresh = true
 }
