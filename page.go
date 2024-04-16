@@ -80,7 +80,8 @@ func (p *Page) Close() error {
 	p.session.removePage(p)
 	return p.session.SendEvent(&Event{
 		Name:   "remove",
-		Target: p.Id,
+		Target: "#pages",
+		Data:   map[string]interface{}{"id": p.Id},
 	})
 }
 
@@ -141,17 +142,19 @@ func (p *Page) Trigger(event Event) bool {
 
 // Draw the page
 func (p *Page) Draw() error {
+	p.buffer.Reset()
 	p.actions = nil
+	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: none">`, p.Id))
 	html, err := p.toHtml(nil)
 	if err != nil {
 		return err
 	}
-
-	html = fmt.Sprintf(`<div id="%s" class="page" style="display: none">%s</div>`, p.Id, html)
+	p.WriteString("</div>")
 
 	// log.Printf("Draw page %s", p.Name)
 	return p.session.SendEvent(&Event{
-		Name: "page",
+		Name:   "page",
+		Target: "#pages",
 		Data: map[string]interface{}{
 			"id":    p.Id,
 			"title": p.Title(),
@@ -166,8 +169,6 @@ func (p *Page) Show() {
 }
 
 func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
-	page.buffer.Reset()
-
 	if pageRenderer != nil {
 		pageRenderer.Render(page)
 	} else {
