@@ -82,26 +82,27 @@ func (s *Session) UniqueId(prefix string) string {
 	return fmt.Sprintf("%s%d", prefix, s.currentId)
 }
 
-func (s *Session) addPage(page *Page) {
+func (s *Session) AddPage(page *Page) {
 	if page.options.Modal {
 		s.page_modal = page
 	}
 	s.pages[page.Id] = page
 }
 
-func (s *Session) removePage(page *Page) {
+func (s *Session) RemovePage(page *Page) error {
 	if page == s.page_modal {
 		s.page_modal = nil
 	}
 	delete(s.pages, page.Id)
+	return page.remove()
 }
 
-func (s *Session) CreatePage(id string, drawer HTMLRenderer, options *Options) *Page {
+func (s *Session) CreatePage(id string, renderer HTMLRenderer, options *Options) *Page {
 	if options == nil {
 		options = &Options{}
 	}
-	page := newPage(id, drawer, s, *options)
-	s.addPage(page)
+	page := newPage(id, renderer, s, *options)
+	s.AddPage(page)
 	return page
 }
 

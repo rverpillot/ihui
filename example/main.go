@@ -33,7 +33,8 @@ func (b *Button) Render(page *ihui.Page) {
 func modal1(page *ihui.Page) {
 	page.WriteString(`<p>Hello page1</p>`)
 	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) {
-		page.Close()
+		session.RemovePage(page)
+		// page.Close()
 	})
 	button.Render(page)
 

@@ -29,6 +29,7 @@ type Page struct {
 	options  Options
 	session  *Session
 	actions  []Action
+	active   bool
 }
 
 func newPage(id string, renderer HTMLRenderer, session *Session, options Options) *Page {
@@ -76,22 +77,16 @@ func (p *Page) Reset() {
 	p.buffer.Reset()
 }
 
-func (p *Page) Close() error {
-	p.Reset()
-	p.session.removePage(p)
-	return p.session.SendEvent(&Event{
-		Name:   "remove",
-		Page:   p.Id,
-		Target: p.options.Target,
-	})
-}
-
 func (p *Page) Add(selector string, part HTMLRenderer) error {
+	p.Reset()
+	p.renderer.Render(p)
 	doc, err := goquery.NewDocumentFromReader(p)
 	if err != nil {
 		return err
 	}
-	html, err := p.toHtml(part)
+	p.Reset()
+	part.Render(p)
+	html, err := p.toHtml()
 	if err != nil {
 		return err
 	}
@@ -150,14 +145,15 @@ func (p *Page) Draw() error {
 		display = "inline"
 	}
 	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: %s">`, p.Id, display))
-	html, err := p.toHtml(nil)
+	p.renderer.Render(p)
+	p.WriteString("</div>")
+	html, err := p.toHtml()
 	if err != nil {
 		return err
 	}
-	p.WriteString("</div>")
 
 	// log.Printf("Draw page %s", p.Name)
-	return p.session.SendEvent(&Event{
+	err = p.session.SendEvent(&Event{
 		Name:   "page",
 		Page:   p.Id,
 		Target: p.options.Target,
@@ -166,34 +162,56 @@ func (p *Page) Draw() error {
 			"html":  html,
 		},
 	})
+	if err != nil {
+		return err
+	}
+	p.active = true
+	return nil
+}
+
+// Send a remove-page event to the client
+func (p *Page) remove() error {
+	p.active = false
+	p.Reset()
+	return p.session.SendEvent(&Event{
+		Name:   "remove-page",
+		Page:   p.Id,
+		Target: p.options.Target,
+	})
+}
+
+// Close the page and remove it from the session. The page can't be used anymore.
+func (p *Page) Close() error {
+	return p.session.RemovePage(p)
 }
 
 // Show the page
 func (p *Page) Show() error {
 	p.options.Visible = true
-	return p.session.SendEvent(&Event{
-		Name:   "show",
-		Page:   p.Id,
-		Target: p.options.Target,
-	})
+	if p.active {
+		return p.session.SendEvent(&Event{
+			Name:   "show-page",
+			Page:   p.Id,
+			Target: p.options.Target,
+		})
+	}
+	return nil
 }
 
+// Hide the page
 func (p *Page) Hide() error {
 	p.options.Visible = false
-	return p.session.SendEvent(&Event{
-		Name:   "hide",
-		Page:   p.Id,
-		Target: p.options.Target,
-	})
+	if p.active {
+		return p.session.SendEvent(&Event{
+			Name:   "hide-page",
+			Page:   p.Id,
+			Target: p.options.Target,
+		})
+	}
+	return nil
 }
 
-func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
-	if pageRenderer != nil {
-		pageRenderer.Render(page)
-	} else {
-		page.renderer.Render(page)
-	}
-
+func (page *Page) toHtml() (string, error) {
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
 	if err != nil {
 		return "", err

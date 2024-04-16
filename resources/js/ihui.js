@@ -149,23 +149,22 @@ function start() {
                     $(msg.Target).html(msg.Data.html)
                     evt = "created"
                 }
-                // $(msg.Target + " > #" + msg.Page).css('display', '')
                 triggerPageEvent(evt, msg.Page, false)
                 break
 
-            case "hide":
+            case "hide-page":
                 $(msg.Target + " > #" + msg.Page).css('display', 'none')
-                triggerPageEvent("hidden", msg.Page)
+                triggerPageEvent("hidden", msg.Page, false)
                 break
 
-            case "show":
-                $(msg.Target + " > #" + msg.Page).css('display', '')
-                triggerPageEvent("shown", msg.Page)
+            case "show-page":
+                $(msg.Target + " > #" + msg.Page).css('display', 'inline')
+                triggerPageEvent("shown", msg.Page, false)
                 break
                 
-            case "remove":
+            case "remove-page":
                 $(msg.Target + " > #" + msg.Page).remove()
-                triggerPageEvent("removed", msg.Page)
+                triggerPageEvent("removed", msg.Page, false)
                 break
 
             case "script":
