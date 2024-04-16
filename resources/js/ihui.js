@@ -31,9 +31,9 @@ function triggerPageEvent(name, pageName, refresh=true) {
     ihui.trigger(name, "page", pageName, refresh)
 }
 
-function showPage(name, target) {
+function showPage(id, target) {
     $(target + " > .page").css('display', 'none')
-    $(target + " > .page#" + name).css('display', '')
+    $(target + " > .page#" + id).css('display', '')
 }
 
 global.ihui = {}
@@ -146,13 +146,13 @@ function start() {
                     document.title = msg.Data.title
                 }
 
-                var pageName = msg.Data.id
-                if (pageName != current_page) {
-                    current_page = pageName
+                var pageId = msg.Data.id
+                if (pageId != current_page) {
+                    current_page = pageId
                     window.scrollTo(0, 0)
                 }
                 
-                var page = $(msg.Target + " > #" + pageName)
+                var page = $(msg.Target + " > #" + pageId)
                 if (page.length > 0) {
                     updateHTML(page, msg.Data.html)
                     evt = "updated"
@@ -160,14 +160,14 @@ function start() {
                     $(msg.Target).append(msg.Data.html)
                     evt = "created"
                 }
-                showPage(pageName, msg.Target)
-                triggerPageEvent(evt, pageName, false)
+                showPage(pageId, msg.Target)
+                triggerPageEvent(evt, pageId, false)
                 break
 
             case "remove":
-                var pageName = msg.Data.id
-                $(msg.Target + " > #" + pageName).remove()
-                triggerPageEvent("removed", pageName)
+                var pageId = msg.Data.id
+                $(msg.Target + " > #" + pageId).remove()
+                triggerPageEvent("removed", pageId)
                 break
 
             case "script":
