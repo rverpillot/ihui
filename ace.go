@@ -32,7 +32,7 @@ func (p *PageAce) SetModel(model interface{}) {
 	p.model = model
 }
 
-func (p *PageAce) Render(page Page) {
+func (p *PageAce) Render(page *Page) {
 	err := p.template.Execute(page, p.model)
 	if err != nil {
 		panic(err)

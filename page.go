@@ -3,7 +3,6 @@ package ihui
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -13,96 +12,84 @@ type Options struct {
 	Modal bool
 }
 
-type Page interface {
-	Write(data []byte) (int, error)
-	WriteString(html string)
-	Read(data []byte) (int, error)
-	Close() error
-	Add(selector string, render PageRenderer) error
-	SetTitle(title string)
-	On(id string, name string, action ActionFunc)
-	Session() *Session
-	Update(selector string, html string) error
-	Get(name string) interface{}
-	UniqueId(prefix string) string
+type HTMLRendererFunc func(*Page)
+
+func (f HTMLRendererFunc) Render(page *Page) { f(page) }
+
+type HTMLRenderer interface {
+	Render(*Page)
 }
 
-type PageRendererFunc func(Page)
-
-func (f PageRendererFunc) Render(page Page) { f(page) }
-
-type PageRenderer interface {
-	Render(Page)
+type Page struct {
+	Id       string
+	renderer HTMLRenderer
+	buffer   bytes.Buffer
+	options  Options
+	session  *Session
+	actions  []Action
 }
 
-type PageHTML struct {
-	Name    string
-	drawer  PageRenderer
-	buffer  bytes.Buffer
-	options Options
-	title   string
-	exit    bool
-	evt     string
-	session *Session
-	actions map[string][]Action
-}
-
-func newHTMLPage(name string, drawer PageRenderer, session *Session, options Options) *PageHTML {
-	page := &PageHTML{
-		Name:    name,
-		drawer:  drawer,
-		options: options,
-		session: session,
+func newPage(id string, renderer HTMLRenderer, session *Session, options Options) *Page {
+	page := &Page{
+		Id:       id,
+		renderer: renderer,
+		options:  options,
+		session:  session,
 	}
 	return page
 }
 
-func (p *PageHTML) Title() string {
+func (p *Page) Title() string {
 	return p.options.Title
 }
 
-func (p *PageHTML) SetTitle(title string) {
+func (p *Page) SetTitle(title string) {
 	p.options.Title = title
 }
 
-func (p *PageHTML) Session() *Session {
+func (p *Page) Session() *Session {
 	return p.session
 }
 
-func (p *PageHTML) Modal() bool {
+func (p *Page) Modal() bool {
 	return p.options.Modal
 }
 
-func (p *PageHTML) Actions() map[string][]Action {
+func (p *Page) Actions() []Action {
 	return p.actions
 }
 
-func (p *PageHTML) Write(data []byte) (int, error) {
+func (p *Page) Write(data []byte) (int, error) {
 	return p.buffer.Write(data)
 }
 
-func (p *PageHTML) Read(data []byte) (int, error) {
-	return p.buffer.Read(data)
-}
-
-func (p *PageHTML) Reset() {
-	p.buffer.Reset()
-}
-
-func (p *PageHTML) Close() error {
-	return nil
-}
-
-func (p *PageHTML) WriteString(html string) {
+func (p *Page) WriteString(html string) {
 	p.Write([]byte(html))
 }
 
-func (p *PageHTML) Add(selector string, render PageRenderer) error {
+func (p *Page) Read(data []byte) (int, error) {
+	return p.buffer.Read(data)
+}
+
+func (p *Page) Reset() {
+	p.buffer.Reset()
+}
+
+func (p *Page) Close() error {
+	p.Reset()
+	p.session.removePage(p)
+	return p.session.SendEvent(&Event{
+		Name:   "remove",
+		Target: p.Id,
+	})
+}
+
+func (p *Page) Add(selector string, part HTMLRenderer) error {
 	doc, err := goquery.NewDocumentFromReader(p)
 	if err != nil {
 		return err
 	}
-	html, err := p.html(render)
+	html, err := p.toHtml(part)
 	if err != nil {
 		return err
 	}
@@ -115,78 +102,76 @@ func (p *PageHTML) Add(selector string, render PageRenderer) error {
 	return nil
 }
 
-func (p *PageHTML) UniqueId(prefix string) string {
+func (p *Page) UniqueId(prefix string) string {
 	return p.session.UniqueId(prefix)
 }
 
-func (p *PageHTML) Get(name string) interface{} {
+func (p *Page) Get(name string) interface{} {
 	return p.session.Get(name)
 }
 
-func (p *PageHTML) On(names string, selector string, action ActionFunc) {
+// Register an action
+func (p *Page) On(eventName string, selector string, action ActionFunc) {
 	if action == nil {
 		return
 	}
-	id := selector
-	for _, name := range strings.Split(names, " ") {
-		if id != "page" {
-			id = p.UniqueId("a-")
-		}
-		p.actions[id] = append(p.actions[id], Action{Name: name, Selector: selector, Fct: action})
-	}
+	p.actions = append(p.actions, Action{Name: eventName, Selector: selector, Fct: action})
 }
 
-func (p *PageHTML) Trigger(event Event, actionsHistory map[string][]Action) int {
-	count := 0
-	// log.Printf("Trigger %s", event)
-	allActions := make(map[string][]Action)
-	for k, v := range actionsHistory {
-		allActions[k] = v
-	}
-	for k, v := range p.actions {
-		allActions[k] = v
-	}
-
-	actions, ok := allActions[event.Target]
-	if ok {
-		for _, action := range actions {
-			if action.Name != event.Name {
-				continue
-			}
-			// log.Printf("Execute %s", event)
-			if action.Fct(p.session, event) {
-				count++
-			}
-			if event.Id != "" {
-				actionsHistory[event.Target] = append(actionsHistory[event.Target], action)
+// Trigger an event. Return true if the event was handled.
+func (p *Page) Trigger(event Event) bool {
+	numAction := -1
+	if event.Target == "page" {
+		for i, action := range p.actions {
+			if action.Name == event.Name && action.Selector == "page" {
+				numAction = i
+				break
 			}
 		}
+	} else {
+		fmt.Sscanf(event.Target, "action-%d", &numAction)
 	}
-	return count
+	if numAction < 0 || numAction >= len(p.actions) {
+		return false
+	}
+	// log.Printf("Execute %+v", event)
+	p.actions[numAction].Fct(p.session, event)
+	return true
 }
 
-func (p *PageHTML) Render() (string, error) {
-	p.resetActions()
-	return p.html(p.drawer)
-}
-
-func (p *PageHTML) Update(selector string, html string) error {
-	event := &Event{Name: "update", Target: selector, Data: html}
-	if err := p.session.sendEvent(event); err != nil {
+// Draw the page
+func (p *Page) Draw() error {
+	p.actions = nil
+	html, err := p.toHtml(nil)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	html = fmt.Sprintf(`<div id="%s" class="page" style="display: none">%s</div>`, p.Id, html)
+
+	// log.Printf("Draw page %s", p.Name)
+	return p.session.SendEvent(&Event{
+		Name: "page",
+		Data: map[string]interface{}{
+			"id":    p.Id,
+			"title": p.Title(),
+			"html":  html,
+		},
+	})
 }
 
-func (p *PageHTML) resetActions() {
-	p.actions = make(map[string][]Action)
+// Show the page
+func (p *Page) Show() {
+	p.session.showPage(p)
 }
 
-func (page *PageHTML) html(drawer PageRenderer) (string, error) {
+func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
 	page.buffer.Reset()
 
-	if drawer != nil {
-		drawer.Render(page)
+	if pageRenderer != nil {
+		pageRenderer.Render(page)
+	} else {
+		page.renderer.Render(page)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
@@ -194,62 +179,40 @@ func (page *PageHTML) html(drawer PageRenderer) (string, error) {
 		return "", err
 	}
 
-	addAction := func(s *goquery.Selection, name string, evname string, target string) string {
-		attr := "_action_id"
-		target = s.AttrOr(attr, target)
-		s.SetAttr(attr, target)
-		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","%s",this);`, evname, target))
-		return target
+	addAction := func(s *goquery.Selection, name string, evname string, numAction int) {
+		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","action-%d",this);`, evname, numAction))
 	}
 
-	removeAllAttrs := func(doc *goquery.Document, names ...string) {
-		for _, name := range names {
-			doc.Find("[" + name + "]").Each(func(i int, s *goquery.Selection) {
-				s.RemoveAttr(name)
-			})
-		}
-	}
-
-	for id, actions := range page.actions {
-		action := actions[0]
-
+	for num, action := range page.actions {
 		if action.Selector == "page" {
 			continue
 		}
-
 		doc.Find(action.Selector).Each(func(i int, s *goquery.Selection) {
-			_id := id
-
 			switch action.Name {
 			case "click":
-				_id = addAction(s, "onclick", action.Name, id)
+				addAction(s, "onclick", action.Name, num)
 
 			case "check":
-				_id = addAction(s, "onchange", action.Name, id)
+				addAction(s, "onchange", action.Name, num)
 
 			case "change":
-				_id = addAction(s, "onchange", action.Name, id)
+				addAction(s, "onchange", action.Name, num)
 
 			case "input":
-				_id = addAction(s, "oninput", action.Name, id)
+				addAction(s, "oninput", action.Name, num)
 
 			case "submit":
-				_id = addAction(s, "onsubmit", action.Name, id)
+				addAction(s, "onsubmit", action.Name, num)
 				s.SetAttr("method", "post")
 				s.SetAttr("action", "")
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					_id = addAction(ss, "onchange", action.Name, id)
+					addAction(ss, "onchange", action.Name, num)
 				})
-			}
-			if _id != id {
-				page.actions[_id] = append(page.actions[_id], action)
 			}
 		})
 	}
-
-	removeAllAttrs(doc, "_action_id")
 
 	return doc.Find("body").Html()
 }

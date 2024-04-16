@@ -26,6 +26,9 @@ func NewHTTPHandler(startFunc func(*Session)) *HTTPHandler {
 	if err != nil {
 		panic(err)
 	}
+	if startFunc == nil {
+		panic("startFunc is nil")
+	}
 	return &HTTPHandler{
 		assetHandler: http.FileServer(http.FS((fsys))),
 		startFunc:    startFunc,
@@ -45,11 +48,28 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
+		defer ws.Close()
 
-		session := newSession(ws)
-		session.sendEvent(&Event{Name: "init"})
-		h.startFunc(session)
-		session.Close()
+		var event Event
+		if err := ws.ReadJSON(&event); err != nil || event.Name != "connect" {
+			log.Println(err)
+			return
+		}
+
+		var session *Session
+		if oldSession := GetSession(event.Id); oldSession != nil && len(oldSession.pages) > 0 {
+			log.Printf("Reconnect to session %s\n", oldSession.id)
+			session = oldSession
+			session.ws = ws
+		} else {
+			session = newSession()
+			session.ws = ws
+			session.SendEvent(&Event{Name: "init", Id: session.Id()})
+			h.startFunc(session)
+		}
+		if err := session.run(); err != nil {
+			log.Println(err)
+		}
 
 	} else {
 		filename := "index.html"
