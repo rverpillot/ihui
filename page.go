@@ -8,9 +8,10 @@ import (
 )
 
 type Options struct {
-	Title  string
-	Modal  bool
-	Target string
+	Title   string
+	Modal   bool
+	Target  string
+	Visible bool
 }
 
 type HTMLRendererFunc func(*Page)
@@ -144,7 +145,11 @@ func (p *Page) trigger(event Event) bool {
 func (p *Page) Draw() error {
 	p.actions = nil
 	p.buffer.Reset()
-	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: none">`, p.Id))
+	display := "none"
+	if p.options.Visible {
+		display = "inline"
+	}
+	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: %s">`, p.Id, display))
 	html, err := p.toHtml(nil)
 	if err != nil {
 		return err
@@ -164,8 +169,22 @@ func (p *Page) Draw() error {
 }
 
 // Show the page
-func (p *Page) Show() {
-	p.session.addPage(p)
+func (p *Page) Show() error {
+	p.options.Visible = true
+	return p.session.SendEvent(&Event{
+		Name:   "show",
+		Page:   p.Id,
+		Target: p.options.Target,
+	})
+}
+
+func (p *Page) Hide() error {
+	p.options.Visible = false
+	return p.session.SendEvent(&Event{
+		Name:   "hide",
+		Page:   p.Id,
+		Target: p.options.Target,
+	})
 }
 
 func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {

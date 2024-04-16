@@ -137,7 +137,7 @@ function start() {
                 }
 
                 if (msg.Page != current_page) {
-                    current_page = pageId
+                    current_page = msg.Page
                     window.scrollTo(0, 0)
                 }
                 
@@ -149,10 +149,20 @@ function start() {
                     $(msg.Target).html(msg.Data.html)
                     evt = "created"
                 }
-                $(msg.Target + " > #" + msg.Page).css('display', '')
+                // $(msg.Target + " > #" + msg.Page).css('display', '')
                 triggerPageEvent(evt, msg.Page, false)
                 break
 
+            case "hide":
+                $(msg.Target + " > #" + msg.Page).css('display', 'none')
+                triggerPageEvent("hidden", msg.Page)
+                break
+
+            case "show":
+                $(msg.Target + " > #" + msg.Page).css('display', '')
+                triggerPageEvent("shown", msg.Page)
+                break
+                
             case "remove":
                 $(msg.Target + " > #" + msg.Page).remove()
                 triggerPageEvent("removed", msg.Page)

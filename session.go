@@ -96,15 +96,17 @@ func (s *Session) removePage(page *Page) {
 	delete(s.pages, page.Id)
 }
 
-func (s *Session) CreatePage(name string, drawer HTMLRenderer, options *Options) *Page {
+func (s *Session) CreatePage(id string, drawer HTMLRenderer, options *Options) *Page {
 	if options == nil {
 		options = &Options{}
 	}
-	return newPage(name, drawer, s, *options)
+	page := newPage(id, drawer, s, *options)
+	s.addPage(page)
+	return page
 }
 
-func (s *Session) ShowPage(name string, renderer HTMLRenderer, options *Options) {
-	s.CreatePage(name, renderer, options).Show()
+func (s *Session) ShowPage(id string, renderer HTMLRenderer, options *Options) {
+	s.CreatePage(id, renderer, options).Show()
 }
 
 func (s *Session) run() error {
