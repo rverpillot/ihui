@@ -26,7 +26,7 @@ type Page struct {
 	buffer   bytes.Buffer
 	options  Options
 	session  *Session
-	actions  map[string]Action
+	actions  []Action
 }
 
 func newPage(id string, renderer HTMLRenderer, session *Session, options Options) *Page {
@@ -109,15 +109,15 @@ func (p *Page) Get(name string) interface{} {
 
 // Register an action
 func (p *Page) On(eventName string, selector string, action ActionCallback) {
-	if p.actions == nil || action == nil {
+	if action == nil {
 		return
 	}
-	p.actions[action.String()] = Action{Name: eventName, Selector: selector, Fct: action}
+	p.actions = append(p.actions, Action{Name: eventName, Selector: selector, Fct: action})
 }
 
 // trigger an event. Return true if the event was handled.
 func (p *Page) trigger(event Event) bool {
-	idAction := ""
+	idAction := -1
 	if event.Target == "page" {
 		for id, action := range p.actions {
 			if action.Name == event.Name && action.Selector == "page" {
@@ -126,9 +126,9 @@ func (p *Page) trigger(event Event) bool {
 			}
 		}
 	} else {
-		idAction = event.Target
+		fmt.Sscanf(event.Target, "action-%d", &idAction)
 	}
-	if idAction == "" {
+	if idAction == -1 {
 		return false
 	}
 	// log.Printf("Execute %+v", event)
@@ -138,7 +138,7 @@ func (p *Page) trigger(event Event) bool {
 
 // Draw the page
 func (p *Page) Draw() error {
-	p.actions = make(map[string]Action)
+	p.actions = nil
 	p.buffer.Reset()
 	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: none">`, p.Id))
 	html, err := p.toHtml(nil)
@@ -176,8 +176,8 @@ func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
 		return "", err
 	}
 
-	addAction := func(s *goquery.Selection, name string, evname string, idAction string) {
-		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","%s",this);`, evname, idAction))
+	addAction := func(s *goquery.Selection, name string, evname string, idAction int) {
+		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","action-%d",this);`, evname, idAction))
 	}
 
 	for id, action := range page.actions {
