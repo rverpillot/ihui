@@ -8,8 +8,9 @@ import (
 )
 
 type Options struct {
-	Title string
-	Modal bool
+	Title  string
+	Modal  bool
+	Target string
 }
 
 type HTMLRendererFunc func(*Page)
@@ -30,6 +31,9 @@ type Page struct {
 }
 
 func newPage(id string, renderer HTMLRenderer, session *Session, options Options) *Page {
+	if options.Target == "" {
+		options.Target = "#pages"
+	}
 	page := &Page{
 		Id:       id,
 		renderer: renderer,
@@ -76,8 +80,8 @@ func (p *Page) Close() error {
 	p.session.removePage(p)
 	return p.session.SendEvent(&Event{
 		Name:   "remove",
-		Target: "#pages",
-		Data:   map[string]interface{}{"id": p.Id},
+		Id:     p.Id,
+		Target: p.options.Target,
 	})
 }
 
@@ -150,9 +154,9 @@ func (p *Page) Draw() error {
 	// log.Printf("Draw page %s", p.Name)
 	return p.session.SendEvent(&Event{
 		Name:   "page",
-		Target: "#pages",
+		Id:     p.Id,
+		Target: p.options.Target,
 		Data: map[string]interface{}{
-			"id":    p.Id,
 			"title": p.Title(),
 			"html":  html,
 		},

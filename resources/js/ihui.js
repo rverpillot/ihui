@@ -96,9 +96,6 @@ function start() {
         var msg = { name: name, id: id, target: target, data: data, refresh: true }
         // console.log(msg)
         ws.send(JSON.stringify(msg))
-        // if (name == "click") { // TODO: check an history attribute in the message ?
-        //     history.pushState(msg, "")
-        // }
         event.preventDefault()
     }
 
@@ -107,17 +104,17 @@ function start() {
         ws.send(JSON.stringify(msg))
     }
 
-/*
     window.onpopstate = function (event) {
         var msg = event.state
         if (!msg) {
             window.location.reload()
             return
         }
-        // console.log(msg)
-        ihui.trigger(msg.name, msg.target, msg.data)
+        console.log(msg)
+        // TODO: call server to get page
+        // ihui.trigger("show", msg, null)
     }
-*/
+
     ws.onerror = function (event) {
         console.log(event)
     }
@@ -129,7 +126,7 @@ function start() {
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        console.log(msg)
+        // console.log(msg)
 
         switch (msg.Name) {
             case "init":
@@ -146,10 +143,11 @@ function start() {
                     document.title = msg.Data.title
                 }
 
-                var pageId = msg.Data.id
+                var pageId = msg.Id
                 if (pageId != current_page) {
                     current_page = pageId
                     window.scrollTo(0, 0)
+                    history.pushState(pageId, "")
                 }
                 
                 var page = $(msg.Target + " > #" + pageId)
@@ -165,7 +163,7 @@ function start() {
                 break
 
             case "remove":
-                var pageId = msg.Data.id
+                var pageId = msg.Id
                 $(msg.Target + " > #" + pageId).remove()
                 triggerPageEvent("removed", pageId)
                 break

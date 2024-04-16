@@ -24,6 +24,7 @@ type Session struct {
 	pages         []*Page
 	currentId     int64
 	noPageRefresh bool
+	pages_history map[string]*Page
 }
 
 func purgeOldSessions() {
@@ -49,10 +50,11 @@ func GetSession(id string) *Session {
 
 func newSession() *Session {
 	session := &Session{
-		id:        uuid.New().String(),
-		date:      time.Now(),
-		params:    make(map[string]interface{}),
-		currentId: 0,
+		id:            uuid.New().String(),
+		date:          time.Now(),
+		params:        make(map[string]interface{}),
+		currentId:     0,
+		pages_history: make(map[string]*Page),
 	}
 	sessions[session.id] = session
 	return session
@@ -93,6 +95,7 @@ func (s *Session) showPage(page *Page) {
 	} else {
 		s.pages[len(s.pages)-1] = page
 	}
+	s.pages_history[page.Id] = page
 }
 
 func (s *Session) findPage(page *Page) int {
