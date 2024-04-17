@@ -81,6 +81,7 @@ func (p *Page) On(eventName string, selector string, action ActionCallback) {
 	if action == nil {
 		return
 	}
+	// log.Printf("Page '%s': Register action %s on %s", p.Id, eventName, selector)
 	p.actions = append(p.actions, Action{Name: eventName, Selector: selector, Fct: action})
 }
 
@@ -112,7 +113,7 @@ func (p *Page) trigger(event Event) bool {
 	if idAction == -1 {
 		return false
 	}
-	// log.Printf("Execute %+v", event)
+	// log.Printf("Page '%s' - execute: %+v", p.Id, event)
 	p.actions[idAction].Fct(p.session, event)
 	return true
 }
@@ -182,6 +183,7 @@ func (p *Page) Hide() error {
 }
 
 func (p *Page) Add(id string, component HTMLRenderer) *Page {
+	// log.Printf("Add component '%s'", id)
 	page := newPage(id, component, Options{Visible: true, Target: "#" + p.Id, Replace: true})
 	p.session.addPage(page)
 	return page

@@ -92,6 +92,7 @@ func (s *Session) getPage(id string) *Page {
 }
 
 func (s *Session) addPage(page *Page) {
+	// log.Printf("Add page '%s'", page.Id)
 	page.session = s
 	if page.options.Modal {
 		if s.page_modal != nil {
@@ -100,20 +101,25 @@ func (s *Session) addPage(page *Page) {
 		s.page_modal = page
 		return
 	}
-	if idx := slices.Index(s.pages, page); idx >= 0 {
+	if idx := slices.IndexFunc(s.pages, func(p *Page) bool { return p.Id == page.Id }); idx >= 0 {
 		s.pages[idx] = page
 	} else {
 		s.pages = append(s.pages, page)
 	}
+	// fmt.Println("--------------------")
+	// for i, p := range s.pages {
+	// 	fmt.Printf("%d: Id:%s addr:%p actions: %d\n", i, p.Id, p, len(p.actions))
+	// }
 }
 
 func (s *Session) removePage(page *Page) error {
+	// log.Printf("Remove page '%s'", page.Id)
 	if page == s.page_modal {
 		err := s.page_modal.remove()
 		s.page_modal = nil
 		return err
 	}
-	if idx := slices.Index(s.pages, page); idx >= 0 {
+	if idx := slices.IndexFunc(s.pages, func(p *Page) bool { return p.Id == page.Id }); idx >= 0 {
 		s.pages = slices.Delete(s.pages, idx, idx+1)
 		return page.remove()
 	}
@@ -121,12 +127,19 @@ func (s *Session) removePage(page *Page) error {
 }
 
 func (s *Session) ShowPage(id string, renderer HTMLRenderer, options *Options) {
+	// log.Printf("Show page '%s'", id)
 	if options == nil {
 		options = &Options{}
 	}
 	options.Visible = true
 	page := newPage(id, renderer, *options)
 	s.addPage(page)
+}
+
+func (s *Session) HidePage(id string) {
+	if page := s.getPage(id); page != nil {
+		page.Hide()
+	}
 }
 
 func (s *Session) run() error {

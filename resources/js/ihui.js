@@ -28,7 +28,7 @@ function triggerPageEvent(name, pageName, refresh=true) {
     var event = new CustomEvent("page-" + name, { detail: { page: pageName } })
     // console.log(event)
     document.dispatchEvent(event)
-    ihui.trigger(name, "page", pageName, refresh)
+    ihui.trigger(name, pageName, "page", null, refresh)
 }
 
 global.ihui = {}
@@ -94,8 +94,8 @@ function start() {
         event.preventDefault()
     }
 
-    global.ihui.trigger = function (name, target, data, refresh=true) {
-        var msg = { name: name, page: data, target: target, data: data, refresh: refresh}
+    global.ihui.trigger = function (name, page, target, data, refresh=true) {
+        var msg = { name: name, page: page, target: target, data: data, refresh: refresh}
         ws.send(JSON.stringify(msg))
     }
 
@@ -119,7 +119,7 @@ function start() {
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        // console.log(msg)
+        console.log(msg)
 
         switch (msg.Name) {
             case "init":
