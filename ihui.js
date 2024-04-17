@@ -117,7 +117,7 @@ function start() {
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        console.log(msg)
+        // console.log(msg)
 
         switch (msg.Name) {
             case "init":
