@@ -2,6 +2,7 @@ package ihui
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,14 +18,14 @@ var (
 )
 
 type Session struct {
-	id            string
-	date          time.Time
-	params        map[string]interface{}
-	pages         map[string]*Page
-	page_modal    *Page
-	ws            *websocket.Conn
-	currentId     int64
-	noPageRefresh bool
+	id         string
+	date       time.Time
+	params     map[string]interface{}
+	pages      []*Page
+	page_modal *Page
+	ws         *websocket.Conn
+	uniqueId   int64
+	noRefresh  bool
 }
 
 func purgeOldSessions() {
@@ -50,11 +51,10 @@ func GetSession(id string) *Session {
 
 func newSession() *Session {
 	session := &Session{
-		id:        uuid.New().String(),
-		date:      time.Now(),
-		params:    make(map[string]interface{}),
-		pages:     make(map[string]*Page),
-		currentId: 0,
+		id:       uuid.New().String(),
+		date:     time.Now(),
+		params:   make(map[string]interface{}),
+		uniqueId: 0,
 	}
 	sessions[session.id] = session
 	return session
@@ -78,36 +78,55 @@ func (s *Session) Get(name string) interface{} {
 }
 
 func (s *Session) UniqueId(prefix string) string {
-	s.currentId++
-	return fmt.Sprintf("%s%d", prefix, s.currentId)
+	s.uniqueId++
+	return fmt.Sprintf("%s%d", prefix, s.uniqueId)
 }
 
-func (s *Session) AddPage(page *Page) {
+func (s *Session) getPage(id string) *Page {
+	for _, page := range s.pages {
+		if page.Id == id {
+			return page
+		}
+	}
+	return nil
+}
+
+func (s *Session) addPage(page *Page) {
+	page.session = s
 	if page.options.Modal {
+		if s.page_modal != nil {
+			s.page_modal.remove()
+		}
 		s.page_modal = page
+		return
 	}
-	s.pages[page.Id] = page
+	if idx := slices.Index(s.pages, page); idx >= 0 {
+		s.pages[idx] = page
+	} else {
+		s.pages = append(s.pages, page)
+	}
 }
 
-func (s *Session) RemovePage(page *Page) error {
+func (s *Session) removePage(page *Page) error {
 	if page == s.page_modal {
+		err := s.page_modal.remove()
 		s.page_modal = nil
+		return err
 	}
-	delete(s.pages, page.Id)
-	return page.remove()
-}
-
-func (s *Session) CreatePage(id string, renderer HTMLRenderer, options *Options) *Page {
-	if options == nil {
-		options = &Options{}
+	if idx := slices.Index(s.pages, page); idx >= 0 {
+		s.pages = slices.Delete(s.pages, idx, idx+1)
+		return page.remove()
 	}
-	page := newPage(id, renderer, s, *options)
-	s.AddPage(page)
-	return page
+	return nil
 }
 
 func (s *Session) ShowPage(id string, renderer HTMLRenderer, options *Options) {
-	s.CreatePage(id, renderer, options).Show()
+	if options == nil {
+		options = &Options{}
+	}
+	options.Visible = true
+	page := newPage(id, renderer, *options)
+	s.addPage(page)
 }
 
 func (s *Session) run() error {
@@ -115,12 +134,12 @@ func (s *Session) run() error {
 		s.date = time.Now()
 
 		if s.page_modal != nil {
-			if err := s.page_modal.Draw(); err != nil {
+			if err := s.page_modal.draw(); err != nil {
 				return err
 			}
 		} else {
 			for _, page := range s.pages {
-				if err := page.Draw(); err != nil {
+				if err := page.draw(); err != nil {
 					return err
 				}
 			}
@@ -133,29 +152,31 @@ func (s *Session) run() error {
 				s.date = time.Now()
 				return err
 			}
-
 			// log.Printf("Event: %+v\n", event)
 
-			page, ok := s.pages[event.Page]
-			if !ok {
+			var page *Page
+			if s.page_modal != nil { // Ignore event if it is not for the modal page
+				if event.Page == s.page_modal.Id {
+					page = s.page_modal
+				}
+			} else {
+				page = s.getPage(event.Page)
+			}
+
+			if page == nil {
 				continue
 			}
 
-			// Ignore event if it is not for the modal page
-			if s.page_modal != nil && page.Id != s.page_modal.Id {
-				continue
-			}
-
-			s.noPageRefresh = false
-			if page.trigger(*event) && (event.Refresh && !s.noPageRefresh) {
+			s.noRefresh = false
+			if page.trigger(*event) && (event.Refresh && !s.noRefresh) {
 				break
 			}
 		}
 	}
 }
 
-func (s *Session) PreventPageRefresh() {
-	s.noPageRefresh = true
+func (s *Session) PreventRefresh() {
+	s.noRefresh = true
 }
 
 func (s *Session) SendEvent(event *Event) error {

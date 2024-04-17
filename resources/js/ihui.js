@@ -146,7 +146,10 @@ function start() {
                     updateHTML(page, msg.Data.html)
                     evt = "updated"
                 } else {
-                    $(msg.Target).html(msg.Data.html)
+                    if (msg.Data.replace)
+                        $(msg.Target).replaceWith(msg.Data.html)
+                    else
+                        $(msg.Target).html(msg.Data.html)
                     evt = "created"
                 }
                 triggerPageEvent(evt, msg.Page, false)
