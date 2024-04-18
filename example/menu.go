@@ -30,7 +30,7 @@ func (menu *Menu) SetActive(name string) {
 	}
 }
 
-func (menu *Menu) Render(page *ihui.Page) {
+func (menu *Menu) Render(page *ihui.Page) error {
 	page.WriteString(`<div id="menu">`)
 	for _, name := range menu.names {
 		if name == menu.active {
@@ -40,8 +40,9 @@ func (menu *Menu) Render(page *ihui.Page) {
 		id := page.UniqueId("m")
 		page.WriteString(fmt.Sprintf(`<div><a id="%s" href="">%s</a></div>`, id, name))
 		active := name
-		page.On("click", fmt.Sprintf("[id=%s]", id), func(session *ihui.Session, _ ihui.Event) {
+		page.On("click", fmt.Sprintf("[id=%s]", id), func(session *ihui.Session, _ ihui.Event) error {
 			menu.SetActive(active)
+			return nil
 		})
 	}
 	page.WriteString(`</div>`)
@@ -54,4 +55,5 @@ func (menu *Menu) Render(page *ihui.Page) {
 		menu.pages[name].Render(page)
 		page.WriteString(`</div>`)
 	}
+	return nil
 }

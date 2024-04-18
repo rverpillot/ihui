@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type ActionCallback func(*Session, Event)
+type ActionCallback func(*Session, Event) error
 
 func (f ActionCallback) String() string { return fmt.Sprintf("#%p", f) }
 

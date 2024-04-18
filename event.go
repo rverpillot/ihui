@@ -3,6 +3,7 @@ package ihui
 type Event struct {
 	Name    string
 	Id      string
+	Page    string
 	Target  string
 	Refresh bool
 	Data    interface{}

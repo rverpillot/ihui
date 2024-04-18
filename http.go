@@ -16,12 +16,12 @@ var resources embed.FS
 
 type HTTPHandler struct {
 	assetHandler http.Handler
-	startFunc    func(*Session)
+	startFunc    func(*Session) error
 	templ        *template.Template
 	Path         string
 }
 
-func NewHTTPHandler(startFunc func(*Session)) *HTTPHandler {
+func NewHTTPHandler(startFunc func(*Session) error) *HTTPHandler {
 	fsys, err := fs.Sub(resources, "resources")
 	if err != nil {
 		panic(err)
@@ -65,7 +65,11 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			session = newSession()
 			session.ws = ws
 			session.SendEvent(&Event{Name: "init", Id: session.Id()})
-			h.startFunc(session)
+			if err := h.startFunc(session); err != nil {
+				log.Println(err)
+				session.close()
+				return
+			}
 		}
 		if err := session.run(); err != nil {
 			log.Println(err)

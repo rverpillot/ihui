@@ -7,18 +7,20 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type Options struct {
-	Title  string
-	Modal  bool
-	Target string
-}
+type HTMLRendererFunc func(*Page) error
 
-type HTMLRendererFunc func(*Page)
-
-func (f HTMLRendererFunc) Render(page *Page) { f(page) }
+func (f HTMLRendererFunc) Render(page *Page) error { return f(page) }
 
 type HTMLRenderer interface {
-	Render(*Page)
+	Render(*Page) error
+}
+
+type Options struct {
+	Title   string
+	Modal   bool
+	Target  string
+	Replace bool
+	Visible bool
 }
 
 type Page struct {
@@ -28,19 +30,18 @@ type Page struct {
 	options  Options
 	session  *Session
 	actions  []Action
+	active   bool
 }
 
-func newPage(id string, renderer HTMLRenderer, session *Session, options Options) *Page {
+func newPage(id string, renderer HTMLRenderer, options Options) *Page {
 	if options.Target == "" {
-		options.Target = "#pages"
+		options.Target = "body"
 	}
-	page := &Page{
+	return &Page{
 		Id:       id,
 		renderer: renderer,
 		options:  options,
-		session:  session,
 	}
-	return page
 }
 
 func (p *Page) Title() string {
@@ -55,7 +56,7 @@ func (p *Page) Session() *Session {
 	return p.session
 }
 
-func (p *Page) Modal() bool {
+func (p *Page) IsModal() bool {
 	return p.options.Modal
 }
 
@@ -65,42 +66,6 @@ func (p *Page) Write(data []byte) (int, error) {
 
 func (p *Page) WriteString(html string) {
 	p.Write([]byte(html))
-}
-
-func (p *Page) Read(data []byte) (int, error) {
-	return p.buffer.Read(data)
-}
-
-func (p *Page) Reset() {
-	p.buffer.Reset()
-}
-
-func (p *Page) Close() error {
-	p.Reset()
-	p.session.removePage(p)
-	return p.session.SendEvent(&Event{
-		Name:   "remove",
-		Id:     p.Id,
-		Target: p.options.Target,
-	})
-}
-
-func (p *Page) Add(selector string, part HTMLRenderer) error {
-	doc, err := goquery.NewDocumentFromReader(p)
-	if err != nil {
-		return err
-	}
-	html, err := p.toHtml(part)
-	if err != nil {
-		return err
-	}
-	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
-		s.SetHtml(html)
-	})
-	p.Reset()
-	html, _ = doc.Find("body").Html()
-	p.WriteString(html)
-	return nil
 }
 
 func (p *Page) UniqueId(prefix string) string {
@@ -116,11 +81,24 @@ func (p *Page) On(eventName string, selector string, action ActionCallback) {
 	if action == nil {
 		return
 	}
+	// log.Printf("Page '%s': Register action %s on %s", p.Id, eventName, selector)
 	p.actions = append(p.actions, Action{Name: eventName, Selector: selector, Fct: action})
 }
 
+func (p *Page) sendEvent(name string, data any) error {
+	if p.session == nil {
+		return fmt.Errorf("Page %s has no session", p.Id)
+	}
+	return p.session.SendEvent(&Event{
+		Name:   name,
+		Page:   p.Id,
+		Target: p.options.Target,
+		Data:   data,
+	})
+}
+
 // trigger an event. Return true if the event was handled.
-func (p *Page) trigger(event Event) bool {
+func (p *Page) trigger(event Event) error {
 	idAction := -1
 	if event.Target == "page" {
 		for id, action := range p.actions {
@@ -132,56 +110,93 @@ func (p *Page) trigger(event Event) bool {
 	} else {
 		fmt.Sscanf(event.Target, "action-%d", &idAction)
 	}
-	if idAction == -1 {
-		return false
+	if idAction < 0 || idAction >= len(p.actions) {
+		return nil
 	}
-	// log.Printf("Execute %+v", event)
-	p.actions[idAction].Fct(p.session, event)
-	return true
+	// log.Printf("Page '%s' - execute: %+v", p.Id, event)
+	action := p.actions[idAction]
+	return action.Fct(p.session, event)
 }
 
-// Draw the page
-func (p *Page) Draw() error {
+// draw the page
+func (p *Page) draw() error {
 	p.actions = nil
 	p.buffer.Reset()
-	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: none">`, p.Id))
-	html, err := p.toHtml(nil)
+	display := "none"
+	if p.options.Visible {
+		display = "inline"
+	}
+	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: %s">`, p.Id, display))
+	if p.renderer != nil {
+		p.renderer.Render(p)
+	}
+	p.WriteString("</div>")
+	html, err := p.toHtml()
 	if err != nil {
 		return err
 	}
-	p.WriteString("</div>")
 
 	// log.Printf("Draw page %s", p.Name)
-	return p.session.SendEvent(&Event{
-		Name:   "page",
-		Id:     p.Id,
-		Target: p.options.Target,
-		Data: map[string]interface{}{
-			"title": p.Title(),
-			"html":  html,
-		},
+	err = p.sendEvent("page", map[string]interface{}{
+		"title":   p.Title(),
+		"html":    html,
+		"replace": p.options.Replace,
 	})
+	if err != nil {
+		return err
+	}
+	p.active = true
+	return nil
+}
+
+// Send a remove-page event to the client
+func (p *Page) remove() error {
+	return p.sendEvent("remove-page", nil)
+}
+
+// Close the page and remove it from the session. The page can't be used anymore.
+func (p *Page) Close() error {
+	p.active = false
+	p.buffer.Reset()
+	if p.session == nil {
+		return nil
+	}
+	return p.session.removePage(p)
 }
 
 // Show the page
-func (p *Page) Show() {
-	p.session.showPage(p)
+func (p *Page) Show() error {
+	p.options.Visible = true
+	if p.active {
+		return p.sendEvent("show-page", nil)
+	}
+	return nil
 }
 
-func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
-	if pageRenderer != nil {
-		pageRenderer.Render(page)
-	} else {
-		page.renderer.Render(page)
+// Hide the page
+func (p *Page) Hide() error {
+	p.options.Visible = false
+	if p.active {
+		return p.sendEvent("hide-page", nil)
 	}
+	return nil
+}
 
+func (p *Page) Add(id string, component HTMLRenderer) *Page {
+	// log.Printf("Add component '%s'", id)
+	page := newPage(id, component, Options{Visible: true, Target: "#" + p.Id, Replace: true})
+	p.session.addPage(page)
+	return page
+}
+
+func (page *Page) toHtml() (string, error) {
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
 	if err != nil {
 		return "", err
 	}
 
-	addAction := func(s *goquery.Selection, name string, evname string, idAction int) {
-		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","action-%d",this);`, evname, idAction))
+	addAction := func(s *goquery.Selection, name string, evname string, pageId string, idAction int) {
+		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","%s","action-%d",this);`, evname, pageId, idAction))
 	}
 
 	for id, action := range page.actions {
@@ -191,25 +206,25 @@ func (page *Page) toHtml(pageRenderer HTMLRenderer) (string, error) {
 		doc.Find(action.Selector).Each(func(i int, s *goquery.Selection) {
 			switch action.Name {
 			case "click":
-				addAction(s, "onclick", action.Name, id)
+				addAction(s, "onclick", action.Name, page.Id, id)
 
 			case "check":
-				addAction(s, "onchange", action.Name, id)
+				addAction(s, "onchange", action.Name, page.Id, id)
 
 			case "change":
-				addAction(s, "onchange", action.Name, id)
+				addAction(s, "onchange", action.Name, page.Id, id)
 
 			case "input":
-				addAction(s, "oninput", action.Name, id)
+				addAction(s, "oninput", action.Name, page.Id, id)
 
 			case "submit":
-				addAction(s, "onsubmit", action.Name, id)
+				addAction(s, "onsubmit", action.Name, page.Id, id)
 				s.SetAttr("method", "post")
 				s.SetAttr("action", "")
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					addAction(ss, "onchange", action.Name, id)
+					addAction(ss, "onchange", action.Name, page.Id, id)
 				})
 			}
 		})
