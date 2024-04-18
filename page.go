@@ -100,9 +100,9 @@ func (p *Page) sendEvent(name string, data any) error {
 // trigger an event. Return true if the event was handled.
 func (p *Page) trigger(event Event) error {
 	idAction := -1
-	if event.Target == "page" {
+	if event.Target == "" {
 		for id, action := range p.actions {
-			if action.Name == event.Name && action.Selector == "page" {
+			if action.Name == event.Name && action.Selector == "" {
 				idAction = id
 				break
 			}
@@ -195,36 +195,37 @@ func (page *Page) toHtml() (string, error) {
 		return "", err
 	}
 
-	addAction := func(s *goquery.Selection, name string, evname string, pageId string, idAction int) {
-		s.SetAttr(name, fmt.Sprintf(`ihui.on(event,"%s","%s","action-%d",this);`, evname, pageId, idAction))
+	addAction := func(s *goquery.Selection, name string, evname string, idAction int) {
+		value := fmt.Sprintf(`ihui.on(event,"%s","%s","action-%d",this);`, evname, page.Id, idAction)
+		s.SetAttr(name, value)
 	}
 
 	for id, action := range page.actions {
-		if action.Selector == "page" {
+		if action.Selector == "" {
 			continue
 		}
 		doc.Find(action.Selector).Each(func(i int, s *goquery.Selection) {
 			switch action.Name {
 			case "click":
-				addAction(s, "onclick", action.Name, page.Id, id)
+				addAction(s, "onclick", action.Name, id)
 
 			case "check":
-				addAction(s, "onchange", action.Name, page.Id, id)
+				addAction(s, "onchange", action.Name, id)
 
 			case "change":
-				addAction(s, "onchange", action.Name, page.Id, id)
+				addAction(s, "onchange", action.Name, id)
 
 			case "input":
-				addAction(s, "oninput", action.Name, page.Id, id)
+				addAction(s, "oninput", action.Name, id)
 
 			case "submit":
-				addAction(s, "onsubmit", action.Name, page.Id, id)
+				addAction(s, "onsubmit", action.Name, id)
 				s.SetAttr("method", "post")
 				s.SetAttr("action", "")
 
 			case "form":
 				s.Find("input[name], textarea[name], select[name]").Each(func(i int, ss *goquery.Selection) {
-					addAction(ss, "onchange", action.Name, page.Id, id)
+					addAction(ss, "onchange", action.Name, id)
 				})
 			}
 		})

@@ -28,7 +28,7 @@ function triggerPageEvent(name, pageName, refresh=true) {
     var event = new CustomEvent("page-" + name, { detail: { page: pageName } })
     // console.log(event)
     document.dispatchEvent(event)
-    ihui.trigger(name, pageName, "page", null, refresh)
+    ihui.trigger(name, pageName, null, refresh)
 }
 
 global.ihui = {}
@@ -94,8 +94,8 @@ function start() {
         event.preventDefault()
     }
 
-    global.ihui.trigger = function (name, page, target, data, refresh=true) {
-        var msg = { name: name, page: page, target: target, data: data, refresh: refresh}
+    global.ihui.trigger = function (name, page, data, refresh=true) {
+        var msg = { name: name, page: page, data: data, refresh: refresh}
         ws.send(JSON.stringify(msg))
     }
 
@@ -144,13 +144,13 @@ function start() {
                 var page = $(msg.Target + " > #" + msg.Page)
                 if (page.length > 0) {
                     updateHTML(page, msg.Data.html)
-                    evt = "updated"
+                    evt = "page-updated"
                 } else {
                     if (msg.Data.replace)
                         $(msg.Target).replaceWith(msg.Data.html)
                     else
                         $(msg.Target).html(msg.Data.html)
-                    evt = "created"
+                    evt = "page-created"
                 }
                 triggerPageEvent(evt, msg.Page, false)
                 break

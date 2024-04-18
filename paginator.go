@@ -1,5 +1,8 @@
 package ihui
 
+// Paginator is a paginator. 
+// It is used to split a list of items into pages.
+
 import "math"
 
 type Fragment struct {
@@ -29,6 +32,7 @@ func NewPaginator(pagesize int) *Paginator {
 	return p
 }
 
+// SetTotal sets the total number of items
 func (p *Paginator) SetTotal(size int) {
 	if p.Size != size {
 		p.Size = size
@@ -36,6 +40,7 @@ func (p *Paginator) SetTotal(size int) {
 	}
 }
 
+// Pages returns the number of pages
 func (p *Paginator) Pages() int {
 	nb := int(math.Ceil(float64(p.Size) / float64(p.PageSize)))
 	p.Fragments = nil
@@ -45,6 +50,7 @@ func (p *Paginator) Pages() int {
 	return nb
 }
 
+// SetPage sets the current page
 func (p *Paginator) SetPage(index int) {
 	if index > 0 && index <= p.Pages() {
 		p.iCurrent = index
@@ -52,10 +58,12 @@ func (p *Paginator) SetPage(index int) {
 	}
 }
 
+// PreviousPage sets the current page to the previous page
 func (p *Paginator) PreviousPage() {
 	p.SetPage(p.iCurrent - 1)
 }
 
+// NextPage sets the current page to the next page
 func (p *Paginator) NextPage() {
 	p.SetPage(p.iCurrent + 1)
 }

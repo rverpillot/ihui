@@ -42,7 +42,7 @@ func modal1(page *ihui.Page) error {
 	})
 	button2.Render(page)
 
-	page.On("create", "page", func(s *ihui.Session, _ ihui.Event) error {
+	page.On("page-created", "", func(s *ihui.Session, _ ihui.Event) error {
 		log.Println("page1 loaded!")
 		return nil
 	})
