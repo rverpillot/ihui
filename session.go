@@ -3,6 +3,7 @@ package ihui
 import (
 	"fmt"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,7 +11,7 @@ import (
 )
 
 const (
-	sessionTimeout = 10 * time.Minute
+	sessionTimeout = 5 * time.Minute
 )
 
 var (
@@ -26,6 +27,8 @@ type Session struct {
 	ws         *websocket.Conn
 	uniqueId   int64
 	noRefresh  bool
+
+	lock sync.Mutex
 }
 
 func purgeOldSessions() {
@@ -70,6 +73,8 @@ func (s *Session) Id() string {
 }
 
 func (s *Session) Set(name string, value interface{}) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.params[name] = value
 }
 
@@ -78,6 +83,8 @@ func (s *Session) Get(name string) interface{} {
 }
 
 func (s *Session) UniqueId(prefix string) string {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.uniqueId++
 	return fmt.Sprintf("%s%d", prefix, s.uniqueId)
 }
@@ -101,6 +108,10 @@ func (s *Session) addPage(page *Page) {
 		s.page_modal = page
 		return
 	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	if idx := slices.IndexFunc(s.pages, func(p *Page) bool { return p.Id == page.Id }); idx >= 0 {
 		s.pages[idx] = page
 	} else {
@@ -119,6 +130,10 @@ func (s *Session) removePage(page *Page) error {
 		s.page_modal = nil
 		return err
 	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	if idx := slices.IndexFunc(s.pages, func(p *Page) bool { return p.Id == page.Id }); idx >= 0 {
 		s.pages = slices.Delete(s.pages, idx, idx+1)
 		return page.remove()
@@ -168,12 +183,12 @@ func (s *Session) run() error {
 			// log.Printf("Event: %+v\n", event)
 
 			var page *Page
-			if s.page_modal != nil { // Ignore event if it is not for the modal page
-				if event.Page == s.page_modal.Id {
+			if s.page_modal == nil {
+				page = s.getPage(event.Page)
+			} else {
+				if event.Page == s.page_modal.Id { // Ignore event if it is not for the modal page
 					page = s.page_modal
 				}
-			} else {
-				page = s.getPage(event.Page)
 			}
 
 			if page == nil {
@@ -193,6 +208,8 @@ func (s *Session) PreventRefresh() {
 }
 
 func (s *Session) SendEvent(event *Event) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	if err := s.ws.WriteJSON(event); err != nil {
 		return err
 	}

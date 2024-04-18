@@ -2,6 +2,7 @@ package ihui
 
 import (
 	"html/template"
+	"io"
 
 	"github.com/yosssi/ace"
 )
@@ -32,8 +33,12 @@ func (p *PageAce) SetModel(model interface{}) {
 	p.model = model
 }
 
+func (p *PageAce) Execute(w io.Writer, model interface{}) error {
+	return p.template.Execute(w, model)
+}
+
 func (p *PageAce) Render(page *Page) {
-	err := p.template.Execute(page, p.model)
+	err := p.Execute(page, p.model)
 	if err != nil {
 		panic(err)
 	}

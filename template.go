@@ -2,6 +2,7 @@ package ihui
 
 import (
 	"html/template"
+	"io"
 )
 
 type PageTemplate struct {
@@ -24,8 +25,12 @@ func (p *PageTemplate) SetModel(model interface{}) {
 	p.model = model
 }
 
+func (p *PageTemplate) Execute(w io.Writer, model interface{}) error {
+	return p.template.Execute(w, model)
+}
+
 func (p *PageTemplate) Render(page *Page) {
-	err := p.template.Execute(page, p.model)
+	err := p.Execute(page, p.model)
 	if err != nil {
 		panic(err)
 	}
