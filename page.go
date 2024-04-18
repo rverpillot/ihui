@@ -3,7 +3,6 @@ package ihui
 import (
 	"bytes"
 	"fmt"
-	"log"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -99,7 +98,7 @@ func (p *Page) sendEvent(name string, data any) error {
 }
 
 // trigger an event. Return true if the event was handled.
-func (p *Page) trigger(event Event) bool {
+func (p *Page) trigger(event Event) error {
 	idAction := -1
 	if event.Target == "page" {
 		for id, action := range p.actions {
@@ -111,16 +110,12 @@ func (p *Page) trigger(event Event) bool {
 	} else {
 		fmt.Sscanf(event.Target, "action-%d", &idAction)
 	}
-	if idAction == -1 {
-		return false
+	if idAction < 0 || idAction >= len(p.actions) {
+		return nil
 	}
 	// log.Printf("Page '%s' - execute: %+v", p.Id, event)
 	action := p.actions[idAction]
-	if err := action.Fct(p.session, event); err != nil {
-		log.Printf("Execute %s: %s", action.Name, err)
-		return false
-	}
-	return true
+	return action.Fct(p.session, event)
 }
 
 // draw the page

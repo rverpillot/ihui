@@ -2,6 +2,7 @@ package ihui
 
 import (
 	"fmt"
+	"log"
 	"slices"
 	"sync"
 	"time"
@@ -200,7 +201,11 @@ func (s *Session) run() error {
 			}
 
 			s.noRefresh = false
-			if page.trigger(*event) && (event.Refresh && !s.noRefresh) {
+			if err := page.trigger(*event); err != nil {
+				log.Print(err)
+				s.ShowError(err)
+			}
+			if event.Refresh && !s.noRefresh {
 				break
 			}
 		}
@@ -247,4 +252,8 @@ func (s *Session) UpdateHtml(selector string, html string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Session) ShowError(err error) {
+	s.Script(`alert("%s")`, err.Error())
 }

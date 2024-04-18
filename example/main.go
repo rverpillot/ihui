@@ -37,6 +37,10 @@ func modal1(page *ihui.Page) error {
 		return nil
 	})
 	button.Render(page)
+	button2 := newButton("Error", func(session *ihui.Session, _ ihui.Event) error {
+		return fmt.Errorf("an error occured")
+	})
+	button2.Render(page)
 
 	page.On("create", "page", func(s *ihui.Session, _ ihui.Event) error {
 		log.Println("page1 loaded!")
