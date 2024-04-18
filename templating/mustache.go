@@ -29,7 +29,7 @@ func (p *PageMustache) SetModel(model interface{}) {
 
 func (p *PageMustache) Execute(w io.Writer, model interface{}) (err error) {
 	if p.template == nil {
-		content, err := fs.ReadFile(p.fsys, p.filename)
+		content, err := fs.ReadFile(p.fsys, p.filename) 
 		if err != nil {
 			return err
 		}
