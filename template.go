@@ -3,20 +3,20 @@ package ihui
 import (
 	"html/template"
 	"io"
+	"io/fs"
 )
 
 type PageTemplate struct {
+	fsys     fs.FS
+	filename string
 	template *template.Template
 	model    interface{}
 }
 
-func NewPageTemplate(filename string, tmpl string, model interface{}) *PageTemplate {
-	t, err := template.New(filename).Parse(tmpl)
-	if err != nil {
-		panic(err)
-	}
+func NewPageTemplate(fsys fs.FS, filename string, model interface{}) *PageTemplate {
 	return &PageTemplate{
-		template: t,
+		fsys:     fsys,
+		filename: filename,
 		model:    model,
 	}
 }
@@ -25,7 +25,17 @@ func (p *PageTemplate) SetModel(model interface{}) {
 	p.model = model
 }
 
-func (p *PageTemplate) Execute(w io.Writer, model interface{}) error {
+func (p *PageTemplate) Execute(w io.Writer, model interface{}) (err error) {
+	if p.template == nil {
+		content, err := fs.ReadFile(p.fsys, p.filename)
+		if err != nil {
+			return err
+		}
+		p.template, err = template.New(p.filename).Parse(string(content))
+		if err != nil {
+			return err
+		}
+	}
 	return p.template.Execute(w, model)
 }
 
