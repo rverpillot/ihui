@@ -7,12 +7,12 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type HTMLRendererFunc func(*Page)
+type HTMLRendererFunc func(*Page) error
 
-func (f HTMLRendererFunc) Render(page *Page) { f(page) }
+func (f HTMLRendererFunc) Render(page *Page) error { return f(page) }
 
 type HTMLRenderer interface {
-	Render(*Page)
+	Render(*Page) error
 }
 
 type Options struct {

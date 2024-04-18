@@ -1,9 +1,11 @@
-package ihui
+package templating
 
 import (
 	"html/template"
 	"io"
 	"io/fs"
+
+	"github.com/rverpillot/ihui"
 )
 
 type PageTemplate struct {
@@ -39,9 +41,6 @@ func (p *PageTemplate) Execute(w io.Writer, model interface{}) (err error) {
 	return p.template.Execute(w, model)
 }
 
-func (p *PageTemplate) Render(page *Page) {
-	err := p.Execute(page, p.model)
-	if err != nil {
-		panic(err)
-	}
+func (p *PageTemplate) Render(page *ihui.Page) error {
+	return p.Execute(page, p.model)
 }

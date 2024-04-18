@@ -30,7 +30,7 @@ func (b *Button) Render(page *ihui.Page) {
 }
 
 // Pages
-func modal1(page *ihui.Page) {
+func modal1(page *ihui.Page) error {
 	page.WriteString(`<p>Hello page1</p>`)
 	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) {
 		page.Close()
@@ -40,18 +40,21 @@ func modal1(page *ihui.Page) {
 	page.On("create", "page", func(s *ihui.Session, _ ihui.Event) {
 		log.Println("page1 loaded!")
 	})
+	return nil
 }
 
-func tab1(page *ihui.Page) {
+func tab1(page *ihui.Page) error {
 	page.WriteString(`<p>Hello Tab 1</p>`)
+	return nil
 }
 
-func tab2(page *ihui.Page) {
+func tab2(page *ihui.Page) error {
 	page.WriteString(`<p>Hello Tab 2</p>`)
 	button := newButton("go page 1", func(session *ihui.Session, event ihui.Event) {
 		session.ShowPage("modal1", ihui.HTMLRendererFunc(modal1), &ihui.Options{Title: "Modal 1", Modal: true})
 	})
 	button.Render(page)
+	return nil
 }
 
 // Init
