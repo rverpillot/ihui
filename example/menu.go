@@ -40,8 +40,9 @@ func (menu *Menu) Render(page *ihui.Page) error {
 		id := page.UniqueId("m")
 		page.WriteString(fmt.Sprintf(`<div><a id="%s" href="">%s</a></div>`, id, name))
 		active := name
-		page.On("click", fmt.Sprintf("[id=%s]", id), func(session *ihui.Session, _ ihui.Event) {
+		page.On("click", fmt.Sprintf("[id=%s]", id), func(session *ihui.Session, _ ihui.Event) error {
 			menu.SetActive(active)
+			return nil
 		})
 	}
 	page.WriteString(`</div>`)

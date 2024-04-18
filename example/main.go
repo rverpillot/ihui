@@ -32,13 +32,15 @@ func (b *Button) Render(page *ihui.Page) {
 // Pages
 func modal1(page *ihui.Page) error {
 	page.WriteString(`<p>Hello page1</p>`)
-	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) {
+	button := newButton("Exit", func(session *ihui.Session, _ ihui.Event) error {
 		page.Close()
+		return nil
 	})
 	button.Render(page)
 
-	page.On("create", "page", func(s *ihui.Session, _ ihui.Event) {
+	page.On("create", "page", func(s *ihui.Session, _ ihui.Event) error {
 		log.Println("page1 loaded!")
+		return nil
 	})
 	return nil
 }
@@ -50,20 +52,20 @@ func tab1(page *ihui.Page) error {
 
 func tab2(page *ihui.Page) error {
 	page.WriteString(`<p>Hello Tab 2</p>`)
-	button := newButton("go page 1", func(session *ihui.Session, event ihui.Event) {
-		session.ShowPage("modal1", ihui.HTMLRendererFunc(modal1), &ihui.Options{Title: "Modal 1", Modal: true})
+	button := newButton("go page 1", func(session *ihui.Session, event ihui.Event) error {
+		return session.ShowPage("modal1", ihui.HTMLRendererFunc(modal1), &ihui.Options{Title: "Modal 1", Modal: true})
 	})
 	button.Render(page)
 	return nil
 }
 
 // Init
-func start(session *ihui.Session) {
+func start(session *ihui.Session) error {
 	menu := NewMenu()
 	menu.Add("Tab1", ihui.HTMLRendererFunc(tab1))
 	menu.Add("Tab2", ihui.HTMLRendererFunc(tab2))
 
-	session.ShowPage("menu", menu, &ihui.Options{Title: "Example"})
+	return session.ShowPage("menu", menu, &ihui.Options{Title: "Example"})
 }
 
 func main() {

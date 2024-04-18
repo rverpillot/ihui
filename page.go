@@ -3,6 +3,7 @@ package ihui
 import (
 	"bytes"
 	"fmt"
+	"log"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -114,7 +115,11 @@ func (p *Page) trigger(event Event) bool {
 		return false
 	}
 	// log.Printf("Page '%s' - execute: %+v", p.Id, event)
-	p.actions[idAction].Fct(p.session, event)
+	action := p.actions[idAction]
+	if err := action.Fct(p.session, event); err != nil {
+		log.Printf("Execute %s: %s", action.Name, err)
+		return false
+	}
 	return true
 }
 

@@ -98,15 +98,17 @@ func (s *Session) getPage(id string) *Page {
 	return nil
 }
 
-func (s *Session) addPage(page *Page) {
+func (s *Session) addPage(page *Page) error {
 	// log.Printf("Add page '%s'", page.Id)
 	page.session = s
 	if page.options.Modal {
 		if s.page_modal != nil {
-			s.page_modal.remove()
+			if err := s.page_modal.remove(); err != nil {
+				return err
+			}
 		}
 		s.page_modal = page
-		return
+		return nil
 	}
 
 	s.lock.Lock()
@@ -121,6 +123,7 @@ func (s *Session) addPage(page *Page) {
 	// for i, p := range s.pages {
 	// 	fmt.Printf("%d: Id:%s addr:%p actions: %d\n", i, p.Id, p, len(p.actions))
 	// }
+	return nil
 }
 
 func (s *Session) removePage(page *Page) error {
@@ -141,20 +144,21 @@ func (s *Session) removePage(page *Page) error {
 	return nil
 }
 
-func (s *Session) ShowPage(id string, renderer HTMLRenderer, options *Options) {
+func (s *Session) ShowPage(id string, renderer HTMLRenderer, options *Options) error {
 	// log.Printf("Show page '%s'", id)
 	if options == nil {
 		options = &Options{}
 	}
 	options.Visible = true
 	page := newPage(id, renderer, *options)
-	s.addPage(page)
+	return s.addPage(page)
 }
 
-func (s *Session) HidePage(id string) {
+func (s *Session) HidePage(id string) error {
 	if page := s.getPage(id); page != nil {
-		page.Hide()
+		return page.Hide()
 	}
+	return fmt.Errorf("Page '%s' not found", id)
 }
 
 func (s *Session) run() error {
