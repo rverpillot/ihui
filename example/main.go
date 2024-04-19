@@ -1,13 +1,18 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/rverpillot/ihui"
 )
+
+//go:embed statics
+var StaticsFs embed.FS
 
 // Button
 type Button struct {
@@ -73,7 +78,9 @@ func start(session *ihui.Session) error {
 }
 
 func main() {
-	http.Handle("/", ihui.NewHTTPHandler(start))
+	fsys, _ := fs.Sub(StaticsFs, "statics")
+	http.Handle("/", http.FileServer(http.FS(fsys)))
+	http.Handle("/ihui.js/", ihui.NewHTTPHandler(start))
 
 	port := os.Getenv("PORT")
 	if port == "" {

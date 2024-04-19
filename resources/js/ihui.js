@@ -35,7 +35,7 @@ function start() {
 
     var current_page
 
-    var location = myScript.src.replace("/js/ihui.min.js", "")
+    var location = myScript.src
     if (window.location.protocol == "https:") {
         var protocol = "wss://"
         location = location.replace("https://", "")
@@ -43,7 +43,7 @@ function start() {
         var protocol = "ws://"
         location = location.replace("http://", "")
     }
-    var ws = new WebSocket(protocol + location + "/ws");
+    var ws = new WebSocket(protocol + location + '/ws');
 
     global.ihui.on = function (event, name, page, target, e) {
         var id = $(e).attr("data-id") || $(e).attr("id") || ""
