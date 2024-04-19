@@ -202,7 +202,7 @@ func (s *Session) run() error {
 
 			s.noRefresh = false
 			if err := page.trigger(*event); err != nil {
-				log.Print(err)
+				log.Printf("Error: %s", err.Error())
 				s.ShowError(err)
 			}
 			if event.Refresh && !s.noRefresh {

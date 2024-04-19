@@ -16,27 +16,23 @@ var StaticsFs embed.FS
 
 // Button
 type Button struct {
-	id        string
-	label     string
-	is_danger bool
-	action    ihui.ActionCallback
+	id     string
+	label  string
+	style  string
+	action ihui.ActionCallback
 }
 
-func newButton(label string, is_danger bool, action ihui.ActionCallback) *Button {
+func newButton(label string, style string, action ihui.ActionCallback) *Button {
 	return &Button{
-		label:     label,
-		is_danger: is_danger,
-		action:    action,
+		label:  label,
+		style:  style,
+		action: action,
 	}
 }
 
 func (b *Button) Render(page *ihui.Page) {
 	b.id = page.UniqueId("id-")
-	style := "is-primary"
-	if b.is_danger {
-		style = "is-danger"
-	}
-	fmt.Fprintf(page, `<button id="%s" class="button %s is-small">%s</button>`, b.id, style, b.label)
+	fmt.Fprintf(page, `<button id="%s" class="button %s is-small">%s</button>`, b.id, b.style, b.label)
 	page.On("click", "[id="+b.id+"]", b.action)
 }
 
@@ -45,14 +41,14 @@ func modal1(page *ihui.Page) error {
 	page.WriteString(`<section class="section box">`)
 	page.WriteString(`<div class="block">`)
 	page.WriteString(`<p>Hello page modal</p>`)
-	button := newButton("Exit", false, func(session *ihui.Session, _ ihui.Event) error {
+	button := newButton("Exit", "is-primary", func(session *ihui.Session, _ ihui.Event) error {
 		page.Close()
 		return nil
 	})
 	page.WriteString(`</div>`)
 	page.WriteString(`<div class="field is-grouped">`)
 	button.Render(page)
-	button2 := newButton("Error", true, func(session *ihui.Session, _ ihui.Event) error {
+	button2 := newButton("Error", "is-danger", func(session *ihui.Session, _ ihui.Event) error {
 		return fmt.Errorf("an error occured")
 	})
 	button2.Render(page)
@@ -67,13 +63,17 @@ func modal1(page *ihui.Page) error {
 }
 
 func tab1(page *ihui.Page) error {
+	page.WriteString(`<div class="block">`)
 	page.WriteString(`<p>Hello Tab 1</p>`)
+	page.WriteString(`</div>`)
 	return nil
 }
 
 func tab2(page *ihui.Page) error {
+	page.WriteString(`<div class="block">`)
 	page.WriteString(`<p>Hello Tab 2</p>`)
-	button := newButton("go page 1", false, func(session *ihui.Session, event ihui.Event) error {
+	page.WriteString(`</div>`)
+	button := newButton("go page 1", "is-link", func(session *ihui.Session, event ihui.Event) error {
 		return session.ShowPage("modal1", ihui.HTMLRendererFunc(modal1), &ihui.Options{Title: "Modal 1", Modal: true})
 	})
 	button.Render(page)
@@ -85,7 +85,6 @@ func start(session *ihui.Session) error {
 	menu := NewMenu()
 	menu.Add("Tab1", ihui.HTMLRendererFunc(tab1))
 	menu.Add("Tab2", ihui.HTMLRendererFunc(tab2))
-
 	return session.ShowPage("menu", menu, &ihui.Options{Title: "Example"})
 }
 

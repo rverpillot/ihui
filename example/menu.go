@@ -32,19 +32,25 @@ func (menu *Menu) SetActive(name string) {
 
 func (menu *Menu) Render(page *ihui.Page) error {
 	page.WriteString(`<section class="section">`)
+	page.WriteString(`<div class="tabs">`)
+	page.WriteString(`<ul>`)
 	for _, name := range menu.names {
+		var is_active string
 		if name == menu.active {
-			page.WriteString(fmt.Sprintf(`<div><p>%s</p></div>`, name))
-			continue
+			is_active = "is-active"
+		} else {
+			is_active = ""
 		}
-		id := page.UniqueId("m")
-		page.WriteString(fmt.Sprintf(`<div><a id="%s" href="">%s</a></div>`, id, name))
-		active := name
-		page.On("click", fmt.Sprintf("[id=%s]", id), func(session *ihui.Session, _ ihui.Event) error {
-			menu.SetActive(active)
+		page.WriteString(fmt.Sprintf(`<li class="%s"><a id="%s" href="">%s</a></li>`, is_active, name, name))
+		page.On("click", "#"+name, func(session *ihui.Session, _ ihui.Event) error {
+			menu.SetActive(name)
 			return nil
 		})
 	}
+	page.WriteString(`</ul>`)
+	page.WriteString(`</div>`)
+	page.WriteString(`</section>`)
+	page.WriteString(`<section class="section">`)
 	for _, name := range menu.names {
 		style := "display:none"
 		if name == menu.active {
