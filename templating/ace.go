@@ -28,6 +28,10 @@ func (p *PageAce) SetModel(model interface{}) {
 	p.model = model
 }
 
+func (p *PageAce) Reload() {
+	p.template = nil
+}
+
 func (p *PageAce) Execute(w io.Writer, model interface{}) error {
 	if p.template == nil {
 		content, err := fs.ReadFile(p.fsys, p.filename)

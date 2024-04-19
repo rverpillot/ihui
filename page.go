@@ -182,13 +182,6 @@ func (p *Page) Hide() error {
 	return nil
 }
 
-func (p *Page) Add(id string, component HTMLRenderer) *Page {
-	// log.Printf("Add component '%s'", id)
-	page := newPage(id, component, Options{Visible: true, Target: "#" + p.Id, Replace: true})
-	p.session.addPage(page)
-	return page
-}
-
 func (page *Page) toHtml() (string, error) {
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
 	if err != nil {
