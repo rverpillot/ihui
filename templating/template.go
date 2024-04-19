@@ -4,27 +4,19 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
-
-	"github.com/rverpillot/ihui"
 )
 
 type PageTemplate struct {
 	fsys     fs.FS
 	filename string
 	template *template.Template
-	model    interface{}
 }
 
-func NewPageTemplate(fsys fs.FS, filename string, model interface{}) *PageTemplate {
+func NewPageTemplate(fsys fs.FS, filename string) *PageTemplate {
 	return &PageTemplate{
 		fsys:     fsys,
 		filename: filename,
-		model:    model,
 	}
-}
-
-func (p *PageTemplate) SetModel(model interface{}) {
-	p.model = model
 }
 
 func (p *PageTemplate) Reload() {
@@ -43,8 +35,4 @@ func (p *PageTemplate) Execute(w io.Writer, model interface{}) (err error) {
 		}
 	}
 	return p.template.Execute(w, model)
-}
-
-func (p *PageTemplate) Render(page *ihui.Page) error {
-	return p.Execute(page, p.model)
 }

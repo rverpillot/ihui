@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/rverpillot/ihui"
 	"github.com/yosssi/ace"
 )
 
@@ -13,19 +12,13 @@ type PageAce struct {
 	fsys     fs.FS
 	filename string
 	template *template.Template
-	model    interface{}
 }
 
-func NewPageAce(fsys fs.FS, filename string, model interface{}) *PageAce {
+func NewPageAce(fsys fs.FS, filename string) *PageAce {
 	return &PageAce{
 		fsys:     fsys,
 		filename: filename,
-		model:    model,
 	}
-}
-
-func (p *PageAce) SetModel(model interface{}) {
-	p.model = model
 }
 
 func (p *PageAce) Reload() {
@@ -50,8 +43,4 @@ func (p *PageAce) Execute(w io.Writer, model interface{}) error {
 		p.template = tpl
 	}
 	return p.template.Execute(w, model)
-}
-
-func (p *PageAce) Render(page *ihui.Page) error {
-	return p.Execute(page, p.model)
 }

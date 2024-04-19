@@ -5,36 +5,28 @@ import (
 	"io/fs"
 
 	"github.com/cbroglie/mustache"
-	"github.com/rverpillot/ihui"
 )
 
 type PageMustache struct {
 	fsys     fs.FS
 	filename string
 	template *mustache.Template
-	model    interface{}
 }
 
-func NewPageMustache(fsys fs.FS, filename string, model interface{}) *PageMustache {
+func NewPageMustache(fsys fs.FS, filename string) *PageMustache {
 	return &PageMustache{
 		fsys:     fsys,
 		filename: filename,
-		model:    model,
 	}
-}
-
-func (p *PageMustache) SetModel(model interface{}) {
-	p.model = model
 }
 
 func (p *PageMustache) Reload() {
 	p.template = nil
 }
 
-
 func (p *PageMustache) Execute(w io.Writer, model interface{}) (err error) {
 	if p.template == nil {
-		content, err := fs.ReadFile(p.fsys, p.filename) 
+		content, err := fs.ReadFile(p.fsys, p.filename)
 		if err != nil {
 			return err
 		}
@@ -44,9 +36,5 @@ func (p *PageMustache) Execute(w io.Writer, model interface{}) (err error) {
 		}
 		p.template = tpl
 	}
-	return p.template.FRender(w, p.model)
-}
-
-func (p *PageMustache) Render(page *ihui.Page) error {
-	return p.Execute(page, p.model)
+	return p.template.FRender(w, model)
 }
