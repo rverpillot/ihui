@@ -31,7 +31,7 @@ func (menu *Menu) SetActive(name string) {
 }
 
 func (menu *Menu) Render(page *ihui.Page) error {
-	page.WriteString(`<div id="menu">`)
+	page.WriteString(`<section class="section">`)
 	for _, name := range menu.names {
 		if name == menu.active {
 			page.WriteString(fmt.Sprintf(`<div><p>%s</p></div>`, name))
@@ -45,7 +45,6 @@ func (menu *Menu) Render(page *ihui.Page) error {
 			return nil
 		})
 	}
-	page.WriteString(`</div>`)
 	for _, name := range menu.names {
 		style := "display:none"
 		if name == menu.active {
@@ -55,5 +54,6 @@ func (menu *Menu) Render(page *ihui.Page) error {
 		menu.pages[name].Render(page)
 		page.WriteString(`</div>`)
 	}
+	page.WriteString(`</section>`)
 	return nil
 }
