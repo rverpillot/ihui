@@ -20,12 +20,10 @@ function updateHTML(el, html) {
 }
 
 function triggerPageEvent(name, pageName, refresh=true) {
-    if (name == null || name == "") {
+    if (name == null || name == "" || pageName == null || pageName == "") {
         return
     } 
-    var event = new CustomEvent("page-" + name, { detail: { page: pageName } })
-    // console.log(event)
-    document.dispatchEvent(event)
+    document.dispatchEvent(new CustomEvent("page-" + name, { detail: { page: pageName } }))
     ihui.trigger(name, pageName, null, refresh)
 }
 
@@ -35,7 +33,7 @@ function start() {
 
     var current_page
 
-    var location = myScript.src.replace("/js/ihui.js", "")
+    var location = myScript.src.replace("/js/ihui.min.js", "")
     if (window.location.protocol == "https:") {
         var protocol = "wss://"
         location = location.replace("https://", "")
