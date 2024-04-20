@@ -168,12 +168,12 @@ func (s *Session) run() error {
 
 		if s.page_modal != nil {
 			if err := s.page_modal.draw(); err != nil {
-				return err
+				log.Printf("Error: %s", err.Error())
 			}
 		} else {
 			for _, page := range s.pages {
 				if err := page.draw(); err != nil {
-					return err
+					log.Printf("Error: %s", err.Error())
 				}
 			}
 		}

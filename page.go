@@ -3,9 +3,19 @@ package ihui
 import (
 	"bytes"
 	"fmt"
+	"io"
 
 	"github.com/PuerkitoBio/goquery"
 )
+
+type Template interface {
+	Execute(w io.Writer, model interface{}) error
+}
+
+type FileTemplate interface {
+	Template
+	Reload()
+}
 
 type HTMLRendererFunc func(*Page) error
 
@@ -27,6 +37,7 @@ type Page struct {
 	Id       string
 	renderer HTMLRenderer
 	buffer   bytes.Buffer
+	doc      *goquery.Document
 	options  Options
 	session  *Session
 	actions  []Action
@@ -61,11 +72,49 @@ func (p *Page) IsModal() bool {
 }
 
 func (p *Page) Write(data []byte) (int, error) {
+	p.doc = nil
 	return p.buffer.Write(data)
 }
 
 func (p *Page) WriteString(html string) {
 	p.Write([]byte(html))
+}
+
+func (p *Page) Printf(format string, args ...interface{}) {
+	p.WriteString(fmt.Sprintf(format, args...))
+}
+
+func (p *Page) WriteTemplate(tpl Template, model any) error {
+	return tpl.Execute(p, model)
+}
+
+func (p *Page) Include(selector string, renderer HTMLRenderer) error {
+	doc := p.doc
+	if doc == nil {
+		var err error
+		doc, err = goquery.NewDocumentFromReader(&p.buffer)
+		if err != nil {
+			return err
+		}
+	}
+	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
+		if err := renderer.Render(p); err != nil {
+			return
+		}
+		html, err := p.toHtml()
+		if err != nil {
+			return
+		}
+		s.SetHtml(html)
+	})
+	html, err := doc.Find("body").Html()
+	if err != nil {
+		return err
+	}
+	p.buffer.Reset()
+	p.WriteString(html)
+	p.doc = doc
+	return nil
 }
 
 func (p *Page) UniqueId(prefix string) string {
@@ -128,7 +177,10 @@ func (p *Page) draw() error {
 	}
 	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: %s">`, p.Id, display))
 	if p.renderer != nil {
-		p.renderer.Render(p)
+		p.doc = nil
+		if err := p.renderer.Render(p); err != nil {
+			return err
+		}
 	}
 	p.WriteString("</div>")
 	html, err := p.toHtml()

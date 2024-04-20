@@ -8,24 +8,24 @@ import (
 	"github.com/yosssi/ace"
 )
 
-type PageAce struct {
+type PageFileAce struct {
 	fsys     fs.FS
 	filename string
 	template *template.Template
 }
 
-func NewPageAce(fsys fs.FS, filename string) *PageAce {
-	return &PageAce{
+func NewPageFileAce(fsys fs.FS, filename string) *PageFileAce {
+	return &PageFileAce{
 		fsys:     fsys,
 		filename: filename,
 	}
 }
 
-func (p *PageAce) Reload() {
+func (p *PageFileAce) Reload() {
 	p.template = nil
 }
 
-func (p *PageAce) Execute(w io.Writer, model interface{}) error {
+func (p *PageFileAce) Execute(w io.Writer, model interface{}) error {
 	if p.template == nil {
 		content, err := fs.ReadFile(p.fsys, p.filename)
 		if err != nil {

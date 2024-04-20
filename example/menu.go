@@ -1,65 +1,73 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/rverpillot/ihui"
+	"github.com/rverpillot/ihui/templating"
 )
 
+type Item struct {
+	Name     string
+	r        ihui.HTMLRenderer
+	IsActive bool
+}
+
 type Menu struct {
-	names  []string
-	pages  map[string]ihui.HTMLRenderer
-	active string
+	tmpl  *templating.PageMustache
+	Items []*Item
 }
 
 func NewMenu() *Menu {
-	return &Menu{pages: make(map[string]ihui.HTMLRenderer)}
+	return &Menu{
+		tmpl: templating.NewPageMustache(`
+			<section class="section">
+				<div class="tabs">
+					<ul>
+					{{#Items}}
+						<li {{#IsActive}}class="is-active"{{/IsActive}}><a id="{{Name}}" href="">{{Name}}</a></li>
+					{{/Items}}
+					</ul>
+				</div>
+			</section>
+			<section class="section" data-id="content">
+			</section>
+		`),
+	}
 }
 
 func (menu *Menu) Add(name string, r ihui.HTMLRenderer) {
-	menu.names = append(menu.names, name)
-	menu.pages[name] = r
-	if menu.active == "" {
-		menu.active = name
+	menu.Items = append(menu.Items, &Item{Name: name, r: r, IsActive: false})
+	if len(menu.Items) == 1 {
+		menu.SetActive(name)
 	}
 }
 
 func (menu *Menu) SetActive(name string) {
-	if _, ok := menu.pages[name]; ok {
-		menu.active = name
+	for _, item := range menu.Items {
+		item.IsActive = item.Name == name
 	}
 }
 
+func (menu *Menu) Active() ihui.HTMLRenderer {
+	for _, item := range menu.Items {
+		if item.IsActive {
+			return item.r
+		}
+	}
+	return nil
+}
+
 func (menu *Menu) Render(page *ihui.Page) error {
-	page.WriteString(`<section class="section">`)
-	page.WriteString(`<div class="tabs">`)
-	page.WriteString(`<ul>`)
-	for _, name := range menu.names {
-		var is_active string
-		if name == menu.active {
-			is_active = "is-active"
-		} else {
-			is_active = ""
-		}
-		page.WriteString(fmt.Sprintf(`<li class="%s"><a id="%s" href="">%s</a></li>`, is_active, name, name))
-		page.On("click", "#"+name, func(session *ihui.Session, _ ihui.Event) error {
-			menu.SetActive(name)
-			return nil
-		})
+	if err := page.WriteTemplate(menu.tmpl, menu); err != nil {
+		return err
 	}
-	page.WriteString(`</ul>`)
-	page.WriteString(`</div>`)
-	page.WriteString(`</section>`)
-	page.WriteString(`<section class="section">`)
-	for _, name := range menu.names {
-		style := "display:none"
-		if name == menu.active {
-			style = ""
-		}
-		page.WriteString(fmt.Sprintf(`<div id="%s" style="%s">`, name, style))
-		menu.pages[name].Render(page)
-		page.WriteString(`</div>`)
+
+	if err := page.Include("[data-id=content]", menu.Active()); err != nil {
+		return err
 	}
-	page.WriteString(`</section>`)
+
+	page.On("click", "a", func(s *ihui.Session, e ihui.Event) error {
+		menu.SetActive(e.Id)
+		return nil
+	})
 	return nil
 }
