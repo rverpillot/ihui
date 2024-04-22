@@ -252,7 +252,7 @@ func (s *Session) RecvEvent() (*Event, error) {
 }
 
 // Execute a script on the client side
-func (s *Session) Script(script string, args ...interface{}) error {
+func (s *Session) Execute(script string, args ...interface{}) error {
 	event := &Event{
 		Name: "script",
 		Data: fmt.Sprintf(script, args...),
@@ -273,5 +273,5 @@ func (s *Session) UpdateHtml(selector string, html string) error {
 }
 
 func (s *Session) ShowError(err error) {
-	s.Script(`alert("%s")`, err.Error())
+	s.Execute(`alert("%s")`, err.Error())
 }
