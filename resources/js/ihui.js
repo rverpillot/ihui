@@ -25,7 +25,7 @@ function triggerPageEvent(name, pageName, refresh=true) {
     if (name == null || name == "" || pageName == null || pageName == "") {
         return
     } 
-    document.dispatchEvent(new CustomEvent("page-" + name, { detail: { page: pageName } }))
+    document.dispatchEvent(new CustomEvent(name, { detail: { page: pageName } }))
     ihui.trigger(name, pageName, null, refresh)
 }
 
@@ -155,17 +155,17 @@ function start() {
 
             case "hide-page":
                 $(msg.Target + " > #" + msg.Page).css('display', 'none')
-                triggerPageEvent("hidden", msg.Page, false)
+                triggerPageEvent("page-hidden", msg.Page, false)
                 break
 
             case "show-page":
                 $(msg.Target + " > #" + msg.Page).css('display', 'inline')
-                triggerPageEvent("shown", msg.Page, false)
+                triggerPageEvent("page-shown", msg.Page, false)
                 break
                 
             case "remove-page":
                 $(msg.Target + " > #" + msg.Page).remove()
-                triggerPageEvent("removed", msg.Page, false)
+                triggerPageEvent("page-removed", msg.Page, false)
                 break
 
             case "script":
