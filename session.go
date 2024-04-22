@@ -100,6 +100,10 @@ func (s *Session) getPage(id string) *Page {
 
 func (s *Session) addPage(page *Page) error {
 	// log.Printf("Add page '%s'", page.Id)
+	if page.IsModal() {
+		page.session = s
+		return nil
+	}
 	page.session = s
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -109,15 +113,14 @@ func (s *Session) addPage(page *Page) error {
 	} else {
 		s.pages = append(s.pages, page)
 	}
-	// fmt.Println("--------------------")
-	// for i, p := range s.pages {
-	// 	fmt.Printf("%d: Id:%s addr:%p actions: %d\n", i, p.Id, p, len(p.actions))
-	// }
 	return nil
 }
 
 func (s *Session) removePage(page *Page) error {
 	// log.Printf("Remove page '%s'", page.Id)
+	if page.IsModal() {
+		return nil
+	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -156,7 +159,7 @@ func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) 
 	options.Visible = true
 	options.Modal = true
 	page := newPage(id, renderer, *options)
-	page.session = s
+	s.addPage(page)
 	for {
 		s.date = time.Now()
 
@@ -165,13 +168,13 @@ func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) 
 		}
 
 		for {
-			log.Print("Wait event")
+			// log.Print("Wait event")
 			event, err := s.RecvEvent()
 			if err != nil {
 				s.date = time.Now()
 				return err
 			}
-			log.Printf("Event: %+v\n", event)
+			// log.Printf("Event: %+v\n", event)
 
 			if event.Page != page.Id {
 				continue

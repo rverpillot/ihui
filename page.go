@@ -249,7 +249,7 @@ func (p *Page) remove() error {
 func (p *Page) Close() error {
 	p.active = false
 	p.buffer.Reset()
-	if p.session != nil && !p.IsModal() {
+	if p.session != nil {
 		return p.session.removePage(p)
 	}
 	return nil
