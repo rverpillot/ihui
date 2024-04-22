@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/rverpillot/ihui"
-	"github.com/rverpillot/ihui/templating"
 )
 
 type Item struct {
@@ -12,26 +11,11 @@ type Item struct {
 }
 
 type Menu struct {
-	tmpl  *templating.PageMustache
 	Items []*Item
 }
 
 func NewMenu() *Menu {
-	return &Menu{
-		tmpl: templating.NewPageMustache(`
-			<section class="section">
-				<div class="tabs">
-					<ul>
-					{{#Items}}
-						<li {{#IsActive}}class="is-active"{{/IsActive}}><a id="{{Name}}" href="">{{Name}}</a></li>
-					{{/Items}}
-					</ul>
-				</div>
-			</section>
-			<section class="section" data-id="content">
-			</section>
-		`),
-	}
+	return &Menu{}
 }
 
 func (menu *Menu) Add(name string, r ihui.HTMLRenderer) {
@@ -57,11 +41,24 @@ func (menu *Menu) Active() ihui.HTMLRenderer {
 }
 
 func (menu *Menu) Render(page *ihui.Page) error {
-	if err := page.WriteTemplate(menu.tmpl, menu); err != nil {
+	tmpl := `
+	<section class="section">
+		<div class="tabs">
+			<ul>
+			{{#Items}}
+				<li {{#IsActive}}class="is-active"{{/IsActive}}><a id="{{Name}}" href="">{{Name}}</a></li>
+			{{/Items}}
+			</ul>
+		</div>
+	</section>
+	<section class="section" data-id="content">
+	</section>
+	`
+	if err := page.WriteMustacheString(tmpl, menu); err != nil {
 		return err
 	}
 
-	if err := page.Include("[data-id=content]", menu.Active()); err != nil {
+	if err := page.SetHtml("[data-id=content]", menu.Active()); err != nil {
 		return err
 	}
 

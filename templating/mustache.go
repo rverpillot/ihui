@@ -7,18 +7,18 @@ import (
 	"github.com/cbroglie/mustache"
 )
 
-type PageMustache struct {
+type MustacheTemplate struct {
 	content  string
 	template *mustache.Template
 }
 
-func NewPageMustache(content string) *PageMustache {
-	return &PageMustache{
+func NewMustacheTemplate(content string) *MustacheTemplate {
+	return &MustacheTemplate{
 		content: content,
 	}
 }
 
-func (p *PageMustache) Execute(w io.Writer, model interface{}) (err error) {
+func (p *MustacheTemplate) Execute(w io.Writer, model interface{}) (err error) {
 	if p.template == nil {
 		p.template, err = mustache.ParseString(p.content)
 		if err != nil {
@@ -28,24 +28,24 @@ func (p *PageMustache) Execute(w io.Writer, model interface{}) (err error) {
 	return p.template.FRender(w, model)
 }
 
-type PageFileMustache struct {
+type MustacheTemplateFile struct {
 	fsys     fs.FS
 	filename string
 	template *mustache.Template
 }
 
-func NewPageFileMustache(fsys fs.FS, filename string) *PageFileMustache {
-	return &PageFileMustache{
+func NewMustacheTemplateFile(fsys fs.FS, filename string) *MustacheTemplateFile {
+	return &MustacheTemplateFile{
 		fsys:     fsys,
 		filename: filename,
 	}
 }
 
-func (p *PageFileMustache) Reload() {
+func (p *MustacheTemplateFile) Reload() {
 	p.template = nil
 }
 
-func (p *PageFileMustache) Execute(w io.Writer, model interface{}) (err error) {
+func (p *MustacheTemplateFile) Execute(w io.Writer, model interface{}) (err error) {
 	if p.template == nil {
 		content, err := fs.ReadFile(p.fsys, p.filename)
 		if err != nil {

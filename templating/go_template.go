@@ -6,20 +6,20 @@ import (
 	"io/fs"
 )
 
-type PageTemplate struct {
+type GoTemplate struct {
 	pageName string
 	content  string
 	template *template.Template
 }
 
-func NewPageTemplate(pageName, content string) *PageTemplate {
-	return &PageTemplate{
+func NewGoTemplate(pageName, content string) *GoTemplate {
+	return &GoTemplate{
 		pageName: pageName,
 		content:  content,
 	}
 }
 
-func (p *PageTemplate) Execute(w io.Writer, model interface{}) (err error) {
+func (p *GoTemplate) Execute(w io.Writer, model interface{}) (err error) {
 	if p.template == nil {
 		p.template, err = template.New(p.pageName).Parse(p.content)
 		if err != nil {
@@ -29,24 +29,24 @@ func (p *PageTemplate) Execute(w io.Writer, model interface{}) (err error) {
 	return p.template.Execute(w, model)
 }
 
-type PageFileTemplate struct {
+type GoTemplateFile struct {
 	fsys     fs.FS
 	filename string
 	template *template.Template
 }
 
-func NewPageFileTemplate(fsys fs.FS, filename string) *PageFileTemplate {
-	return &PageFileTemplate{
+func NewGoTemplateFile(fsys fs.FS, filename string) *GoTemplateFile {
+	return &GoTemplateFile{
 		fsys:     fsys,
 		filename: filename,
 	}
 }
 
-func (p *PageFileTemplate) Reload() {
+func (p *GoTemplateFile) Reload() {
 	p.template = nil
 }
 
-func (p *PageFileTemplate) Execute(w io.Writer, model interface{}) (err error) {
+func (p *GoTemplateFile) Execute(w io.Writer, model interface{}) (err error) {
 	if p.template == nil {
 		content, err := fs.ReadFile(p.fsys, p.filename)
 		if err != nil {

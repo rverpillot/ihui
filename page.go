@@ -4,17 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/fs"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/rverpillot/ihui/templating"
 )
 
 type Template interface {
 	Execute(w io.Writer, model interface{}) error
-}
-
-type FileTemplate interface {
-	Template
-	Reload()
 }
 
 type HTMLRendererFunc func(*Page) error
@@ -34,14 +31,15 @@ type Options struct {
 }
 
 type Page struct {
-	Id       string
-	renderer HTMLRenderer
-	buffer   bytes.Buffer
-	doc      *goquery.Document
-	options  Options
-	session  *Session
-	actions  []Action
-	active   bool
+	Id        string
+	renderer  HTMLRenderer
+	buffer    bytes.Buffer
+	doc       *goquery.Document
+	options   Options
+	session   *Session
+	actions   []Action
+	templates map[string]Template
+	active    bool
 }
 
 func newPage(id string, renderer HTMLRenderer, options Options) *Page {
@@ -49,9 +47,10 @@ func newPage(id string, renderer HTMLRenderer, options Options) *Page {
 		options.Target = "body"
 	}
 	return &Page{
-		Id:       id,
-		renderer: renderer,
-		options:  options,
+		Id:        id,
+		renderer:  renderer,
+		options:   options,
+		templates: make(map[string]Template),
 	}
 }
 
@@ -88,7 +87,43 @@ func (p *Page) WriteTemplate(tpl Template, model any) error {
 	return tpl.Execute(p, model)
 }
 
-func (p *Page) Include(selector string, renderer HTMLRenderer) error {
+func (p *Page) WriteMustacheString(tpl string, model any) error {
+	return p.WriteTemplate(templating.NewMustacheTemplate(tpl), model)
+}
+
+func (p *Page) WriteMustache(fsys fs.FS, filename string, model any) error {
+	template, ok := p.templates[filename]
+	if !ok {
+		template = templating.NewMustacheTemplateFile(fsys, filename)
+		p.templates[filename] = template
+	}
+	return p.WriteTemplate(template, model)
+}
+
+func (p *Page) WriteGoTemplateString(tpl string, model any) error {
+	return p.WriteTemplate(templating.NewGoTemplate(p.Id, tpl), model)
+}
+
+func (p *Page) WriteGoTemplate(fsys fs.FS, filename string, model any) error {
+	template, ok := p.templates[filename]
+	if !ok {
+		template = templating.NewGoTemplateFile(fsys, filename)
+		p.templates[filename] = template
+	}
+	return p.WriteTemplate(template, model)
+}
+
+func (p *Page) WriteAce(fsys fs.FS, filename string, model any) error {
+	template, ok := p.templates[filename]
+	if !ok {
+		template = templating.NewAceTemplateFile(fsys, filename)
+		p.templates[filename] = template
+	}
+	return p.WriteTemplate(template, model)
+}
+
+func (p *Page) SetHtml(selector string, renderer HTMLRenderer) error {
+
 	doc := p.doc
 	if doc == nil {
 		var err error
