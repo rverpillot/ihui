@@ -58,7 +58,7 @@ func tab2(page *ihui.Page) error {
 	<button class="button is-link is-small" data-id="modal1">Modal 1</button>
 	`)
 	page.On("click", "[data-id=modal1]", func(s *ihui.Session, _ ihui.Event) error {
-		return s.ShowPage("modal1", ihui.HTMLRendererFunc(modal1), &ihui.Options{Title: "Modal 1", Modal: true})
+		return s.ShowModal("modal1", ihui.HTMLRendererFunc(modal1), &ihui.Options{Title: "Modal 1"})
 	})
 	return nil
 }

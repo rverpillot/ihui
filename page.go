@@ -24,10 +24,10 @@ type HTMLRenderer interface {
 
 type Options struct {
 	Title   string
-	Modal   bool
 	Target  string
 	Replace bool
 	Visible bool
+	Modal   bool
 }
 
 type Page struct {
@@ -68,6 +68,10 @@ func (p *Page) Session() *Session {
 
 func (p *Page) IsModal() bool {
 	return p.options.Modal
+}
+
+func (p *Page) IsActive() bool {
+	return p.active
 }
 
 func (p *Page) Write(data []byte) (int, error) {
@@ -245,10 +249,10 @@ func (p *Page) remove() error {
 func (p *Page) Close() error {
 	p.active = false
 	p.buffer.Reset()
-	if p.session == nil {
-		return nil
+	if p.session != nil && !p.IsModal() {
+		return p.session.removePage(p)
 	}
-	return p.session.removePage(p)
+	return nil
 }
 
 // Show the page
