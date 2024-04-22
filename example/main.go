@@ -66,8 +66,8 @@ func tab2(page *ihui.Page) error {
 // Init
 func start(session *ihui.Session) error {
 	menu := NewMenu()
-	menu.Add("Tab1", ihui.HTMLRendererFunc(tab1))
-	menu.Add("Tab2", ihui.HTMLRendererFunc(tab2))
+	menu.AddItem("Tab1", ihui.HTMLRendererFunc(tab1))
+	menu.AddItem("Tab2", ihui.HTMLRendererFunc(tab2))
 	return session.ShowPage("menu", menu, &ihui.Options{Title: "Example"})
 }
 

@@ -18,20 +18,20 @@ func NewMenu() *Menu {
 	return &Menu{}
 }
 
-func (menu *Menu) Add(name string, r ihui.HTMLRenderer) {
+func (menu *Menu) AddItem(name string, r ihui.HTMLRenderer) {
 	menu.Items = append(menu.Items, &Item{Name: name, r: r, IsActive: false})
 	if len(menu.Items) == 1 {
-		menu.SetActive(name)
+		menu.SetActiveItem(name)
 	}
 }
 
-func (menu *Menu) SetActive(name string) {
+func (menu *Menu) SetActiveItem(name string) {
 	for _, item := range menu.Items {
 		item.IsActive = item.Name == name
 	}
 }
 
-func (menu *Menu) Active() ihui.HTMLRenderer {
+func (menu *Menu) ActiveItem() ihui.HTMLRenderer {
 	for _, item := range menu.Items {
 		if item.IsActive {
 			return item.r
@@ -58,12 +58,12 @@ func (menu *Menu) Render(page *ihui.Page) error {
 		return err
 	}
 
-	if err := page.SetHtml("[data-id=content]", menu.Active()); err != nil {
+	if err := page.SetHtml("[data-id=content]", menu.ActiveItem()); err != nil {
 		return err
 	}
 
 	page.On("click", "a", func(s *ihui.Session, e ihui.Event) error {
-		menu.SetActive(e.Id)
+		menu.SetActiveItem(e.Id)
 		return nil
 	})
 	return nil

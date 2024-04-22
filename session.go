@@ -119,7 +119,7 @@ func (s *Session) addPage(page *Page) error {
 func (s *Session) removePage(page *Page) error {
 	// log.Printf("Remove page '%s'", page.Id)
 	if page.IsModal() {
-		return nil
+		return page.remove()
 	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
