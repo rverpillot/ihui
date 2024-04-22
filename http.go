@@ -12,15 +12,32 @@ import (
 //go:embed resources/js/ihui.min.js
 var js []byte
 
+func welcomePage(page *Page) error {
+	page.WriteString(`
+	<section class="section">
+		<div class="content">
+			<h1>Welcome to ihui</h1>
+			<p>ihui is a simple and lightweight web framework for Go.</p>
+			<p>It provides a way to build web applications using Go and HTML templates.</p>
+			<p>ihui uses websocket to read events and write html response.</p>
+		</div>
+	</section>
+	`)
+	return nil
+}
+
 type HTTPHandler struct {
 	startFunc func(*Session) error
 	templ     *template.Template
 	Path      string
 }
 
-func NewHTTPHandler(startFunc func(*Session) error) *HTTPHandler {
+func NewHTTPHandler(startFunc func(*Session) error) http.Handler {
 	if startFunc == nil {
-		panic("startFunc is nil")
+		startFunc = func(s *Session) error {
+			s.ShowPage("welcome", HTMLRendererFunc(welcomePage), &Options{Title: "Welcome"})
+			return nil
+		}
 	}
 	return &HTTPHandler{
 		startFunc: startFunc,
