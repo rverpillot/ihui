@@ -131,11 +131,6 @@ function start() {
                 if (msg.Data.title && msg.Data.title != "") {
                     document.title = msg.Data.title
                 }
-
-                if (msg.Page != current_page) {
-                    current_page = msg.Page
-                    window.scrollTo(0, 0)
-                }
                 
                 var page = $(msg.Target + " > #" + msg.Page)
                 if (page.length > 0) {
