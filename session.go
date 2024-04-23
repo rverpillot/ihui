@@ -146,7 +146,6 @@ func (s *Session) ShowPage(id string, renderer HTMLRenderer, options *Options) e
 	if options.Modal {
 		return s.ShowModal(id, renderer, options)
 	} else {
-		options.Visible = true
 		return s.addPage(newPage(id, renderer, *options))
 	}
 }
@@ -163,7 +162,6 @@ func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) 
 	if options == nil {
 		options = &Options{}
 	}
-	options.Visible = true
 	options.Modal = true
 	page := newPage(id, renderer, *options)
 	s.addPage(page)

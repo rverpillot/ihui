@@ -14,7 +14,7 @@ function updateHTML(el, html) {
                 }
                 return true
             },
-            childrenOnly: true
+            childrenOnly: false
         })
     }
 }
@@ -115,7 +115,7 @@ function start() {
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        // console.log(msg)
+        console.log(msg)
 
         switch (msg.Name) {
             case "init":
@@ -143,9 +143,9 @@ function start() {
                     evt = "page-updated"
                 } else {
                     if (msg.Data.replace)
-                        $(msg.Target).replaceWith(msg.Data.html)
-                    else
                         $(msg.Target).html(msg.Data.html)
+                    else
+                        $(msg.Target).append(msg.Data.html)
                     evt = "page-created"
                 }
                 triggerPageEvent(evt, msg.Page, false)

@@ -45,16 +45,16 @@ func (menu *Menu) Render(page *ihui.Page) error {
 	<section class="section">
 		<div class="tabs">
 			<ul>
-			{{#Items}}
-				<li {{#IsActive}}class="is-active"{{/IsActive}}><a id="{{Name}}" href="">{{Name}}</a></li>
-			{{/Items}}
+			{{range .Items}}
+				<li {{if .IsActive}}class="is-active"{{end}}><a id="{{.Name}}" href="">{{.Name}}</a></li>
+			{{end}}
 			</ul>
 		</div>
 	</section>
 	<section class="section" data-id="content">
 	</section>
 	`
-	if err := page.WriteMustacheString(tmpl, menu); err != nil {
+	if err := page.WriteGoTemplateString(tmpl, menu); err != nil {
 		return err
 	}
 

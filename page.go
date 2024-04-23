@@ -7,7 +7,6 @@ import (
 	"io/fs"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/rverpillot/ihui/templating"
 )
 
 type Template interface {
@@ -26,7 +25,7 @@ type Options struct {
 	Title   string
 	Target  string
 	Replace bool
-	Visible bool
+	Hide    bool
 	Modal   bool
 }
 
@@ -93,43 +92,21 @@ func (p *Page) Printf(format string, args ...interface{}) {
 	p.WriteString(fmt.Sprintf(format, args...))
 }
 
-func (p *Page) WriteTemplate(tpl Template, model any) error {
+func (p *Page) ExecuteTemplate(tpl Template, model any) error {
 	return tpl.Execute(p, model)
 }
 
-func (p *Page) WriteMustacheString(tpl string, model any) error {
-	return p.WriteTemplate(templating.NewMustacheTemplate(tpl), model)
-}
-
-func (p *Page) WriteMustache(fsys fs.FS, filename string, model any) error {
-	template, ok := p.templates[filename]
-	if !ok {
-		template = templating.NewMustacheTemplateFile(fsys, filename)
-		p.templates[filename] = template
-	}
-	return p.WriteTemplate(template, model)
-}
-
 func (p *Page) WriteGoTemplateString(tpl string, model any) error {
-	return p.WriteTemplate(templating.NewGoTemplate(p.Id, tpl), model)
+	return p.ExecuteTemplate(NewGoTemplate(p.Id, tpl), model)
 }
 
 func (p *Page) WriteGoTemplate(fsys fs.FS, filename string, model any) error {
 	template, ok := p.templates[filename]
 	if !ok {
-		template = templating.NewGoTemplateFile(fsys, filename)
+		template = NewGoTemplateFile(fsys, filename)
 		p.templates[filename] = template
 	}
-	return p.WriteTemplate(template, model)
-}
-
-func (p *Page) WriteAce(fsys fs.FS, filename string, model any) error {
-	template, ok := p.templates[filename]
-	if !ok {
-		template = templating.NewAceTemplateFile(fsys, filename)
-		p.templates[filename] = template
-	}
-	return p.WriteTemplate(template, model)
+	return p.ExecuteTemplate(template, model)
 }
 
 func (p *Page) SetHtml(selector string, renderer HTMLRenderer) error {
@@ -217,7 +194,7 @@ func (p *Page) draw() error {
 	p.actions = nil
 	p.buffer.Reset()
 	display := "none"
-	if p.options.Visible {
+	if !p.options.Hide {
 		display = "inline"
 	}
 	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: %s">`, p.Id, display))
@@ -263,7 +240,7 @@ func (p *Page) Close() error {
 
 // Show the page
 func (p *Page) Show() error {
-	p.options.Visible = true
+	p.options.Hide = false
 	if p.active {
 		return p.sendEvent("show-page", nil)
 	}
@@ -272,7 +249,7 @@ func (p *Page) Show() error {
 
 // Hide the page
 func (p *Page) Hide() error {
-	p.options.Visible = false
+	p.options.Hide = true
 	if p.active {
 		return p.sendEvent("hide-page", nil)
 	}

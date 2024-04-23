@@ -1,4 +1,4 @@
-package templating
+package ihui
 
 import (
 	"html/template"
