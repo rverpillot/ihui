@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"path"
 )
 
 type GoTemplate struct {
@@ -48,11 +49,7 @@ func (p *GoTemplateFile) Reload() {
 
 func (p *GoTemplateFile) Execute(w io.Writer, model interface{}) (err error) {
 	if p.template == nil {
-		content, err := fs.ReadFile(p.fsys, p.filename)
-		if err != nil {
-			return err
-		}
-		p.template, err = template.New(p.filename).Parse(string(content))
+		p.template, err = template.New(path.Base(p.filename)).ParseFS(p.fsys, p.filename)
 		if err != nil {
 			return err
 		}
