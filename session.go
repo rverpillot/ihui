@@ -165,6 +165,16 @@ func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) 
 	options.Modal = true
 	page := newPage(id, renderer, *options)
 	s.addPage(page)
+
+	var visible_pages []*Page
+	for _, p := range s.pages {
+		if p.IsVisible() {
+			visible_pages = append(visible_pages, p)
+		}
+		p.Hide()
+	}
+
+main_loop:
 	for {
 		s.date = time.Now()
 
@@ -191,13 +201,18 @@ func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) 
 				s.ShowError(err)
 			}
 			if !page.IsActive() {
-				return nil
+				break main_loop
 			}
 			if event.Refresh && !s.noRefresh {
 				break
 			}
 		}
 	}
+
+	for _, p := range visible_pages {
+		p.Show()
+	}
+	return nil
 }
 
 func (s *Session) run() error {

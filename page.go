@@ -22,11 +22,12 @@ type HTMLRenderer interface {
 }
 
 type Options struct {
-	Title   string
-	Target  string
-	Replace bool
-	Hide    bool
-	Modal   bool
+	Title         string
+	Target        string
+	Replace       bool
+	Hide          bool
+	AlwaysVisible bool
+	Modal         bool
 }
 
 type Page struct {
@@ -71,6 +72,10 @@ func (p *Page) IsModal() bool {
 
 func (p *Page) IsActive() bool {
 	return p.active
+}
+
+func (p *Page) IsVisible() bool {
+	return !p.options.Hide
 }
 
 func (p *Page) ClearCache() {
@@ -249,6 +254,9 @@ func (p *Page) Show() error {
 
 // Hide the page
 func (p *Page) Hide() error {
+	if p.options.AlwaysVisible {
+		return nil
+	}
 	p.options.Hide = true
 	if p.active {
 		return p.sendEvent("hide-page", nil)
