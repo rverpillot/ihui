@@ -98,6 +98,13 @@ func (s *Session) getPage(id string) *Page {
 	return nil
 }
 
+func (s *Session) Refresh(ws *websocket.Conn) {
+	s.ws = ws
+	for _, page := range s.pages {
+		page.ClearCache()
+	}
+}
+
 func (s *Session) addPage(page *Page) error {
 	// log.Printf("Add page '%s'", page.Id)
 	if page.IsModal() {

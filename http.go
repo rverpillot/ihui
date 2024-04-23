@@ -52,7 +52,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if oldSession := GetSession(event.Id); oldSession != nil && len(oldSession.pages) > 0 {
 			log.Printf("Reconnect to session %s\n", oldSession.id)
 			session = oldSession
-			session.ws = ws
+			session.Refresh(ws)
 		} else {
 			session = newSession()
 			session.ws = ws

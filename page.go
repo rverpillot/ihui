@@ -74,6 +74,12 @@ func (p *Page) IsActive() bool {
 	return p.active
 }
 
+func (p *Page) ClearCache() {
+	p.buffer.Reset()
+	p.doc = nil
+	p.templates = make(map[string]Template)
+}
+
 func (p *Page) Write(data []byte) (int, error) {
 	p.doc = nil
 	return p.buffer.Write(data)
