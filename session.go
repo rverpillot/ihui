@@ -104,6 +104,9 @@ func (s *Session) getElement(id string) *HTMLElement {
 
 func (s *Session) Refresh(ws *websocket.Conn) {
 	s.ws = ws
+	if s.page != nil {
+		s.page.ClearCache()
+	}
 	for _, page := range s.elements {
 		page.ClearCache()
 	}
