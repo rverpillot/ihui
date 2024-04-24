@@ -23,7 +23,8 @@ type Session struct {
 	id        string
 	date      time.Time
 	params    map[string]interface{}
-	pages     []*Page
+	page      *HTMLElement
+	elements  []*HTMLElement
 	ws        *websocket.Conn
 	uniqueId  int64
 	noRefresh bool
@@ -64,7 +65,7 @@ func newSession() *Session {
 }
 
 func (s *Session) close() {
-	s.pages = nil
+	s.elements = nil
 	delete(sessions, s.id)
 }
 
@@ -89,10 +90,13 @@ func (s *Session) UniqueId(prefix string) string {
 	return fmt.Sprintf("%s%d", prefix, s.uniqueId)
 }
 
-func (s *Session) getPage(id string) *Page {
-	for _, page := range s.pages {
-		if page.Id == id {
-			return page
+func (s *Session) getElement(id string) *HTMLElement {
+	if s.page != nil && s.page.Id == id {
+		return s.page
+	}
+	for _, e := range s.elements {
+		if e.Id == id {
+			return e
 		}
 	}
 	return nil
@@ -100,40 +104,42 @@ func (s *Session) getPage(id string) *Page {
 
 func (s *Session) Refresh(ws *websocket.Conn) {
 	s.ws = ws
-	for _, page := range s.pages {
+	for _, page := range s.elements {
 		page.ClearCache()
 	}
 }
 
-func (s *Session) addPage(page *Page) error {
-	// log.Printf("Add page '%s'", page.Id)
-	if page.IsModal() {
-		page.session = s
+func (s *Session) add(element *HTMLElement) error {
+	// log.Printf("Add element '%s'", page.Id)
+	element.session = s
+	if element.IsPage() {
+		s.page = element
 		return nil
 	}
-	page.session = s
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if idx := slices.IndexFunc(s.pages, func(p *Page) bool { return p.Id == page.Id }); idx >= 0 {
-		s.pages[idx] = page
+	if idx := slices.IndexFunc(s.elements, func(e *HTMLElement) bool { return e.Id == element.Id }); idx >= 0 {
+		s.elements[idx] = element
 	} else {
-		s.pages = append(s.pages, page)
+		s.elements = append(s.elements, element)
 	}
 	return nil
 }
 
-func (s *Session) removePage(page *Page) error {
-	// log.Printf("Remove page '%s'", page.Id)
-	if page.IsModal() {
-		return page.remove()
+func (s *Session) remove(element *HTMLElement) error {
+	// log.Printf("Remove element '%s'", element.Id)
+	if element.IsPage() {
+		if s.page != nil && s.page.Id == element.Id {
+			s.page = nil
+		}
+		return nil
 	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if idx := slices.IndexFunc(s.pages, func(p *Page) bool { return p.Id == page.Id }); idx >= 0 {
-		s.pages = slices.Delete(s.pages, idx, idx+1)
-		return page.remove()
+	if idx := slices.IndexFunc(s.elements, func(e *HTMLElement) bool { return e.Id == element.Id }); idx >= 0 {
+		s.elements = slices.Delete(s.elements, idx, idx+1)
 	}
 	return nil
 }
@@ -143,18 +149,30 @@ func (s *Session) ShowPage(id string, renderer HTMLRenderer, options *Options) e
 	if options == nil {
 		options = &Options{}
 	}
-	if options.Modal {
-		return s.ShowModal(id, renderer, options)
-	} else {
-		return s.addPage(newPage(id, renderer, *options))
-	}
+	options.Page = true
+	return s.add(newHTMLElement(id, renderer, *options))
 }
 
-func (s *Session) HidePage(id string) error {
-	if page := s.getPage(id); page != nil {
-		return page.Hide()
+func (s *Session) AddElement(id string, renderer HTMLRenderer, options *Options) error {
+	if options == nil {
+		options = &Options{}
 	}
-	return fmt.Errorf("Page '%s' not found", id)
+	options.Page = false
+	return s.add(newHTMLElement(id, renderer, *options))
+}
+
+func (s *Session) Show(id string) error {
+	if element := s.getElement(id); element != nil {
+		return element.Show()
+	}
+	return fmt.Errorf("element '%s' not found", id)
+}
+
+func (s *Session) Hide(id string) error {
+	if element := s.getElement(id); element != nil {
+		return element.Hide()
+	}
+	return fmt.Errorf("element '%s' not found", id)
 }
 
 func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) error {
@@ -162,63 +180,28 @@ func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) 
 	if options == nil {
 		options = &Options{}
 	}
-	options.Modal = true
-	page := newPage(id, renderer, *options)
-	s.addPage(page)
-
-	var visible_pages []*Page
-	for _, p := range s.pages {
-		if p.IsVisible() {
-			visible_pages = append(visible_pages, p)
-			p.Hide()
-		}
-	}
+	previous_page := s.page
 	defer func() {
-		for _, p := range visible_pages {
-			p.Show()
-		}
+		s.page = previous_page
 	}()
-
-	for {
-		s.date = time.Now()
-
-		if err := page.draw(); err != nil {
-			log.Printf("Error: %s", err.Error())
-		}
-
-		for {
-			// log.Print("Wait event")
-			event, err := s.RecvEvent()
-			if err != nil {
-				s.date = time.Now()
-				return err
-			}
-			// log.Printf("Event: %+v\n", event)
-
-			if event.Page != page.Id {
-				continue
-			}
-
-			s.noRefresh = false
-			if err := page.trigger(*event); err != nil {
-				log.Printf("Error: %s", err.Error())
-				s.ShowError(err)
-			}
-			if !page.IsActive() {
-				return nil
-			}
-			if event.Refresh && !s.noRefresh {
-				break
-			}
-		}
+	if err := s.ShowPage(id, renderer, options); err != nil {
+		return err
 	}
+	return s.run(true)
 }
 
-func (s *Session) run() error {
+func (s *Session) run(modal bool) error {
 	for {
 		s.date = time.Now()
-		for _, page := range s.pages {
-			if err := page.draw(); err != nil {
+
+		for _, e := range s.elements {
+			if err := e.draw(); err != nil {
+				log.Printf("Error: %s", err.Error())
+			}
+		}
+
+		if s.page != nil {
+			if err := s.page.draw(); err != nil {
 				log.Printf("Error: %s", err.Error())
 			}
 		}
@@ -232,15 +215,21 @@ func (s *Session) run() error {
 			}
 			// log.Printf("Event: %+v\n", event)
 
-			page := s.getPage(event.Page)
-			if page == nil {
+			element := s.getElement(event.Element)
+			if element == nil {
+				continue
+			}
+			if modal && s.page.Id != event.Element {
 				continue
 			}
 
 			s.noRefresh = false
-			if err := page.trigger(*event); err != nil {
+			if err := element.trigger(*event); err != nil {
 				log.Printf("Error: %s", err.Error())
 				s.ShowError(err)
+			}
+			if modal && s.page == nil {
+				return nil
 			}
 			if event.Refresh && !s.noRefresh {
 				break

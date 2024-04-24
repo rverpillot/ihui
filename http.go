@@ -12,8 +12,8 @@ import (
 //go:embed resources/js/ihui.min.js
 var js []byte
 
-func welcomePage(page *Page) error {
-	page.WriteString(`
+func welcomePage(e *HTMLElement) error {
+	e.WriteString(`
 	<section class="section">
 		<div class="content">
 			<h1>Welcome to ihui</h1>
@@ -66,7 +66,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var session *Session
-		if oldSession := GetSession(event.Id); oldSession != nil && len(oldSession.pages) > 0 {
+		if oldSession := GetSession(event.Id); oldSession != nil && oldSession.page != nil {
 			log.Printf("Reconnect to session %s\n", oldSession.id)
 			session = oldSession
 			session.Refresh(ws)
@@ -80,7 +80,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		if err := session.run(); err != nil {
+		if err := session.run(false); err != nil {
 			log.Println(err)
 		}
 

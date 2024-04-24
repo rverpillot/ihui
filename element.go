@@ -13,40 +13,39 @@ type Template interface {
 	Execute(w io.Writer, model interface{}) error
 }
 
-type HTMLRendererFunc func(*Page) error
+type HTMLRendererFunc func(*HTMLElement) error
 
-func (f HTMLRendererFunc) Render(page *Page) error { return f(page) }
+func (f HTMLRendererFunc) Render(page *HTMLElement) error { return f(page) }
 
 type HTMLRenderer interface {
-	Render(*Page) error
+	Render(*HTMLElement) error
 }
 
 type Options struct {
-	Title         string
-	Target        string
-	Replace       bool
-	Hide          bool
-	AlwaysVisible bool
-	Modal         bool
+	Title   string
+	Target  string
+	Replace bool
+	Hide    bool
+	Page    bool
 }
 
-type Page struct {
+type HTMLElement struct {
 	Id        string
+	session   *Session
 	renderer  HTMLRenderer
 	buffer    bytes.Buffer
 	doc       *goquery.Document
 	options   Options
-	session   *Session
 	actions   []Action
 	templates map[string]Template
 	active    bool
 }
 
-func newPage(id string, renderer HTMLRenderer, options Options) *Page {
+func newHTMLElement(id string, renderer HTMLRenderer, options Options) *HTMLElement {
 	if options.Target == "" {
 		options.Target = "body"
 	}
-	return &Page{
+	return &HTMLElement{
 		Id:        id,
 		renderer:  renderer,
 		options:   options,
@@ -54,58 +53,58 @@ func newPage(id string, renderer HTMLRenderer, options Options) *Page {
 	}
 }
 
-func (p *Page) Title() string {
+func (p *HTMLElement) Title() string {
 	return p.options.Title
 }
 
-func (p *Page) SetTitle(title string) {
+func (p *HTMLElement) SetTitle(title string) {
 	p.options.Title = title
 }
 
-func (p *Page) Session() *Session {
+func (p *HTMLElement) Session() *Session {
 	return p.session
 }
 
-func (p *Page) IsModal() bool {
-	return p.options.Modal
-}
-
-func (p *Page) IsActive() bool {
+func (p *HTMLElement) IsActive() bool {
 	return p.active
 }
 
-func (p *Page) IsVisible() bool {
+func (p *HTMLElement) IsPage() bool {
+	return p.options.Page
+}
+
+func (p *HTMLElement) IsVisible() bool {
 	return !p.options.Hide
 }
 
-func (p *Page) ClearCache() {
+func (p *HTMLElement) ClearCache() {
 	p.buffer.Reset()
 	p.doc = nil
 	p.templates = make(map[string]Template)
 }
 
-func (p *Page) Write(data []byte) (int, error) {
+func (p *HTMLElement) Write(data []byte) (int, error) {
 	p.doc = nil
 	return p.buffer.Write(data)
 }
 
-func (p *Page) WriteString(html string) {
+func (p *HTMLElement) WriteString(html string) {
 	p.Write([]byte(html))
 }
 
-func (p *Page) Printf(format string, args ...interface{}) {
+func (p *HTMLElement) Printf(format string, args ...interface{}) {
 	p.WriteString(fmt.Sprintf(format, args...))
 }
 
-func (p *Page) ExecuteTemplate(tpl Template, model any) error {
+func (p *HTMLElement) ExecuteTemplate(tpl Template, model any) error {
 	return tpl.Execute(p, model)
 }
 
-func (p *Page) WriteGoTemplateString(tpl string, model any) error {
+func (p *HTMLElement) WriteGoTemplateString(tpl string, model any) error {
 	return p.ExecuteTemplate(NewGoTemplate(p.Id, tpl), model)
 }
 
-func (p *Page) WriteGoTemplate(fsys fs.FS, filename string, model any) error {
+func (p *HTMLElement) WriteGoTemplate(fsys fs.FS, filename string, model any) error {
 	template, ok := p.templates[filename]
 	if !ok {
 		template = NewGoTemplateFile(fsys, filename)
@@ -114,7 +113,7 @@ func (p *Page) WriteGoTemplate(fsys fs.FS, filename string, model any) error {
 	return p.ExecuteTemplate(template, model)
 }
 
-func (p *Page) SetHtml(selector string, renderer HTMLRenderer) error {
+func (p *HTMLElement) SetHtml(selector string, renderer HTMLRenderer) error {
 
 	doc := p.doc
 	if doc == nil {
@@ -144,37 +143,37 @@ func (p *Page) SetHtml(selector string, renderer HTMLRenderer) error {
 	return nil
 }
 
-func (p *Page) UniqueId(prefix string) string {
+func (p *HTMLElement) UniqueId(prefix string) string {
 	return p.session.UniqueId(prefix)
 }
 
-func (p *Page) Get(name string) interface{} {
+func (p *HTMLElement) Get(name string) interface{} {
 	return p.session.Get(name)
 }
 
 // Register an action
-func (p *Page) On(eventName string, selector string, action ActionCallback) {
+func (p *HTMLElement) On(eventName string, selector string, action ActionCallback) {
 	if action == nil {
 		return
 	}
-	// log.Printf("Page '%s': Register action %s on %s", p.Id, eventName, selector)
+	// log.Printf("Element '%s': Register action %s on %s", p.Id, eventName, selector)
 	p.actions = append(p.actions, Action{Name: eventName, Selector: selector, Fct: action})
 }
 
-func (p *Page) sendEvent(name string, data any) error {
+func (p *HTMLElement) sendEvent(name string, data any) error {
 	if p.session == nil {
-		return fmt.Errorf("Page %s has no session", p.Id)
+		return fmt.Errorf("element %s has no session", p.Id)
 	}
 	return p.session.SendEvent(&Event{
-		Name:   name,
-		Page:   p.Id,
-		Target: p.options.Target,
-		Data:   data,
+		Name:    name,
+		Element: p.Id,
+		Target:  p.options.Target,
+		Data:    data,
 	})
 }
 
 // trigger an event. Return true if the event was handled.
-func (p *Page) trigger(event Event) error {
+func (p *HTMLElement) trigger(event Event) error {
 	idAction := -1
 	if event.Target == "" {
 		for id, action := range p.actions {
@@ -189,20 +188,24 @@ func (p *Page) trigger(event Event) error {
 	if idAction < 0 || idAction >= len(p.actions) {
 		return nil
 	}
-	// log.Printf("Page '%s' - execute: %+v", p.Id, event)
+	// log.Printf("Element '%s' - execute: %+v", p.Id, event)
 	action := p.actions[idAction]
 	return action.Fct(p.session, event)
 }
 
-// draw the page
-func (p *Page) draw() error {
+// draw the element
+func (p *HTMLElement) draw() error {
 	p.actions = nil
 	p.buffer.Reset()
 	display := "none"
 	if !p.options.Hide {
 		display = "inline"
 	}
-	p.WriteString(fmt.Sprintf(`<div id="%s" class="page" style="display: %s">`, p.Id, display))
+	class := "ihui-element"
+	if p.options.Page {
+		class = "ihui-page"
+	}
+	p.WriteString(fmt.Sprintf(`<div id="%s" class="%s" style="display: %s">`, p.Id, class, display))
 	if p.renderer != nil {
 		p.doc = nil
 		if err := p.renderer.Render(p); err != nil {
@@ -215,9 +218,10 @@ func (p *Page) draw() error {
 		return err
 	}
 
-	// log.Printf("Draw page %s", p.Name)
-	err = p.sendEvent("page", map[string]interface{}{
+	// log.Printf("Draw element %s", p.Name)
+	err = p.sendEvent("element", map[string]interface{}{
 		"title":   p.Title(),
+		"page":    p.options.Page,
 		"html":    html,
 		"replace": p.options.Replace,
 	})
@@ -228,43 +232,35 @@ func (p *Page) draw() error {
 	return nil
 }
 
-// Send a remove-page event to the client
-func (p *Page) remove() error {
-	return p.sendEvent("remove-page", nil)
-}
-
 // Close the page and remove it from the session. The page can't be used anymore.
-func (p *Page) Close() error {
+func (p *HTMLElement) Close() error {
 	p.active = false
 	p.buffer.Reset()
 	if p.session != nil {
-		return p.session.removePage(p)
+		p.session.remove(p)
 	}
-	return nil
+	return p.sendEvent("remove", nil)
 }
 
 // Show the page
-func (p *Page) Show() error {
+func (p *HTMLElement) Show() error {
 	p.options.Hide = false
 	if p.active {
-		return p.sendEvent("show-page", nil)
+		return p.sendEvent("show", nil)
 	}
 	return nil
 }
 
 // Hide the page
-func (p *Page) Hide() error {
-	if p.options.AlwaysVisible {
-		return nil
-	}
+func (p *HTMLElement) Hide() error {
 	p.options.Hide = true
 	if p.active {
-		return p.sendEvent("hide-page", nil)
+		return p.sendEvent("hide", nil)
 	}
 	return nil
 }
 
-func (page *Page) toHtml() (string, error) {
+func (page *HTMLElement) toHtml() (string, error) {
 	doc, err := goquery.NewDocumentFromReader(&page.buffer)
 	if err != nil {
 		return "", err

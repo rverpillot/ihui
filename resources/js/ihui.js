@@ -21,19 +21,9 @@ function updateHTML(el, html) {
     }
 }
 
-function triggerPageEvent(name, pageName, refresh=true) {
-    if (name == null || name == "" || pageName == null || pageName == "") {
-        return
-    } 
-    document.dispatchEvent(new CustomEvent(name, { detail: { page: pageName } }))
-    ihui.trigger(name, pageName, null, refresh)
-}
-
 global.ihui = {}
 
 function start() {
-
-    var current_page
 
     var location = myScript.src
     if (window.location.protocol == "https:") {
@@ -45,7 +35,22 @@ function start() {
     }
     var ws = new WebSocket(protocol + location + '/ws');
 
-    global.ihui.on = function (event, name, page, target, e) {
+    function sendEvent(name, elementName, id, target, data, refresh = true) {
+        var msg = { name: name, element: elementName, id: id, target: target, data: data, refresh: refresh }
+        // console.log("Send:", msg)
+        ws.send(JSON.stringify(msg))
+    }
+
+    function triggerElementEvent(name, elementName, refresh = true) {
+        document.dispatchEvent(new CustomEvent(name, { detail: { element: elementName } }))
+        sendEvent(name, elementName, null, null, null, refresh)
+    }
+
+    global.ihui.trigger = function (name, element, data, refresh = true) {
+        sendEvent(name, element, null, null, data, refresh)
+    }
+
+    global.ihui.on = function (event, name, element, target, e) {
         var id = $(e).attr("data-id") || $(e).attr("id") || ""
 
         switch (name) {
@@ -76,7 +81,7 @@ function start() {
 
             case "submit":
                 var data = {}
-                $(e).find("input[name], textarea[name], select[name]").each(function(index,el){
+                $(e).find("input[name], textarea[name], select[name]").each(function (index, el) {
                     var name = $(el).attr("name")
                     data[name] = $(el).val()
                 })
@@ -86,15 +91,8 @@ function start() {
                 return
         }
 
-        var msg = { name: name, page: page, id: id, target: target, data: data, refresh: true }
-        // console.log(msg)
-        ws.send(JSON.stringify(msg))
+        sendEvent(name, element, id, target, data)
         event.preventDefault()
-    }
-
-    global.ihui.trigger = function (name, page, data, refresh=true) {
-        var msg = { name: name, page: page, data: data, refresh: refresh}
-        ws.send(JSON.stringify(msg))
     }
 
     // window.onpopstate = function (event) {
@@ -117,7 +115,7 @@ function start() {
 
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        console.log(msg)
+        // console.log("Receive:", msg)
 
         switch (msg.Name) {
             case "init":
@@ -129,43 +127,37 @@ function start() {
                 updateHTML(el, msg.Data)
                 break
 
-            case "page":
+            case "element":
                 if (msg.Data.title && msg.Data.title != "") {
                     document.title = msg.Data.title
                 }
-
-                // if (msg.Page != current_page) {
-                //     current_page = msg.Page
-                //     window.scrollTo(0, 0)
-                // }
-                
-                var page = $(msg.Target + " > #" + msg.Page)
-                if (page.length > 0) {
-                    updateHTML(page, msg.Data.html)
-                    evt = "page-updated"
+                if (msg.Data.page) {
+                    $(".ihui-page").not("#" + msg.Element).css('display', 'none') // display only the current page
+                }
+                var element = $(msg.Target + " > #" + msg.Element)
+                if (element.length > 0) {
+                    updateHTML(element, msg.Data.html)
+                    evt = "element-updated"
                 } else {
                     if (msg.Data.replace)
                         $(msg.Target).html(msg.Data.html)
                     else
                         $(msg.Target).append(msg.Data.html)
-                    evt = "page-created"
+                    evt = "element-created"
                 }
-                triggerPageEvent(evt, msg.Page, false)
+                triggerElementEvent(evt, msg.Element, false)
                 break
 
-            case "hide-page":
-                $(msg.Target + " > #" + msg.Page).css('display', 'none')
-                triggerPageEvent("page-hidden", msg.Page, false)
+            case "hide":
+                $(msg.Target + " > #" + msg.Element).css('display', 'none')
                 break
 
-            case "show-page":
-                $(msg.Target + " > #" + msg.Page).css('display', 'inline')
-                triggerPageEvent("page-shown", msg.Page, false)
+            case "show":
+                $(msg.Target + " > #" + msg.Element).css('display', 'inline')
                 break
-                
-            case "remove-page":
-                $(msg.Target + " > #" + msg.Page).remove()
-                triggerPageEvent("page-removed", msg.Page, false)
+
+            case "remove":
+                $(msg.Target + " > #" + msg.Element).remove()
                 break
 
             case "script":

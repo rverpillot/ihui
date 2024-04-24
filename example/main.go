@@ -15,8 +15,8 @@ import (
 var StaticsFs embed.FS
 
 // Pages
-func modal1(page *ihui.Page) error {
-	page.WriteString(`
+func modal1(e *ihui.HTMLElement) error {
+	e.WriteString(`
 	<section class="section box">
 		<div class="block">
 			<p>Hello page modal</p>
@@ -27,22 +27,22 @@ func modal1(page *ihui.Page) error {
 		</div>
 	</section>
 	`)
-	page.On("click", "[data-id=exit]", func(s *ihui.Session, _ ihui.Event) error {
-		page.Close()
+	e.On("click", "[data-id=exit]", func(s *ihui.Session, _ ihui.Event) error {
+		e.Close()
 		return nil
 	})
-	page.On("click", "[data-id=error]", func(s *ihui.Session, _ ihui.Event) error {
+	e.On("click", "[data-id=error]", func(s *ihui.Session, _ ihui.Event) error {
 		return fmt.Errorf("an error occured")
 	})
-	page.On("page-created", "", func(s *ihui.Session, _ ihui.Event) error {
+	e.On("element-created", "", func(s *ihui.Session, _ ihui.Event) error {
 		log.Println("page1 loaded!")
 		return nil
 	})
 	return nil
 }
 
-func tab1(page *ihui.Page) error {
-	page.WriteString(`
+func tab1(e *ihui.HTMLElement) error {
+	e.WriteString(`
 	<div class="block">
 		<p>Hello Tab 1</p>
 	</div>
@@ -50,14 +50,14 @@ func tab1(page *ihui.Page) error {
 	return nil
 }
 
-func tab2(page *ihui.Page) error {
-	page.WriteString(`
+func tab2(e *ihui.HTMLElement) error {
+	e.WriteString(`
 	<div class="block">
 		<p>Hello Tab 2</p>
 	</div>
 	<button class="button is-link is-small" data-id="modal1">Modal 1</button>
 	`)
-	page.On("click", "[data-id=modal1]", func(s *ihui.Session, _ ihui.Event) error {
+	e.On("click", "[data-id=modal1]", func(s *ihui.Session, _ ihui.Event) error {
 		return s.ShowModal("modal1", ihui.HTMLRendererFunc(modal1), &ihui.Options{Title: "Modal 1"})
 	})
 	return nil

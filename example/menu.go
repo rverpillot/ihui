@@ -40,7 +40,7 @@ func (menu *Menu) ActiveItem() ihui.HTMLRenderer {
 	return nil
 }
 
-func (menu *Menu) Render(page *ihui.Page) error {
+func (menu *Menu) Render(e *ihui.HTMLElement) error {
 	tmpl := `
 	<section class="section">
 		<div class="tabs">
@@ -54,15 +54,15 @@ func (menu *Menu) Render(page *ihui.Page) error {
 	<section class="section" data-id="content">
 	</section>
 	`
-	if err := page.WriteGoTemplateString(tmpl, menu); err != nil {
+	if err := e.WriteGoTemplateString(tmpl, menu); err != nil {
 		return err
 	}
 
-	if err := page.SetHtml("[data-id=content]", menu.ActiveItem()); err != nil {
+	if err := e.SetHtml("[data-id=content]", menu.ActiveItem()); err != nil {
 		return err
 	}
 
-	page.On("click", "a", func(s *ihui.Session, e ihui.Event) error {
+	e.On("click", "a", func(s *ihui.Session, e ihui.Event) error {
 		menu.SetActiveItem(e.Id)
 		return nil
 	})
