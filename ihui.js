@@ -5,7 +5,7 @@ var $ = require("cash-dom")
 var scripts = $('script')
 var myScript = scripts.last()[0]
 
-function updateHTML(el, html) {
+function updateHTML(el, html, childrenOnly = false) {
     for (var i = 0; i < el.length; i++) {
         morphdom(el[i], html, {
             onBeforeElUpdated: function (fromEl, toEl) {
@@ -14,7 +14,7 @@ function updateHTML(el, html) {
                 }
                 return true
             },
-            childrenOnly: false
+            childrenOnly: childrenOnly
         })
     }
 }
@@ -122,7 +122,7 @@ function start() {
 
             case "update":
                 var el = $(msg.Target)
-                updateHTML(el, msg.Data)
+                updateHTML(el, msg.Data, true)
                 break
 
             case "element":
@@ -155,11 +155,18 @@ function start() {
                 break
 
             case "remove":
-                $(msg.Target + " > #" + msg.Element).remove()
+                var element = $(msg.Target + " > #" + msg.Element)
+                if (msg.Data.page) {
+                    element.remove()
+                } else {
+                    element.css('display', 'none').html("")
+                }
                 break
 
             case "script":
-                eval(msg.Data)
+                if (msg.Data != "") {
+                    eval(msg.Data)
+                }
                 break
         }
 

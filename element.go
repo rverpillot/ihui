@@ -239,7 +239,9 @@ func (p *HTMLElement) Close() error {
 	if p.session != nil {
 		p.session.remove(p)
 	}
-	return p.sendEvent("remove", nil)
+	return p.sendEvent("remove", map[string]interface{}{
+		"page": p.options.Page,
+	})
 }
 
 // Show the page
