@@ -23,15 +23,14 @@ global.ihui = {}
 
 function start() {
 
-    var location = myScript.src
+    var url = myScript.src
+    console.log("Location:", window.location, url)
     if (window.location.protocol == "https:") {
-        var protocol = "wss://"
-        location = location.replace("https://", "")
+        url = url.replace("https://", "wss://")
     } else {
-        var protocol = "ws://"
-        location = location.replace("http://", "")
+        url = url.replace("http://", "ws://")
     }
-    var ws = new WebSocket(protocol + location + '/ws');
+    var ws = new WebSocket(url + '/ws');
 
     function sendEvent(name, elementName, id, target, data, refresh = true) {
         var msg = { name: name, element: elementName, id: id, target: target, data: data, refresh: refresh }
