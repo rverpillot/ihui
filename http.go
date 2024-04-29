@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -32,7 +33,7 @@ type HTTPHandler struct {
 	Path      string
 }
 
-func NewHTTPHandler(startFunc func(*Session) error) http.Handler {
+func newHTTPHandler(startFunc func(*Session) error) http.Handler {
 	if startFunc == nil {
 		startFunc = func(s *Session) error {
 			s.ShowPage("welcome", HTMLRendererFunc(welcomePage), &Options{Title: "Welcome"})
@@ -85,6 +86,15 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		w.Write(js)
+		w.WriteHeader(http.StatusBadRequest)
 	}
+}
+
+func Handle(mux *http.ServeMux, contextRoot string, startFunc func(*Session) error) {
+	contextRoot = strings.TrimSuffix(contextRoot, "/")
+	mux.HandleFunc(contextRoot+"/ihui.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript")
+		w.Write(js)
+	})
+	mux.Handle(contextRoot+"/ihui.js/ws", newHTTPHandler(startFunc))
 }

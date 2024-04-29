@@ -74,7 +74,7 @@ func start(session *ihui.Session) error {
 func main() {
 	fsys, _ := fs.Sub(StaticsFs, "statics")
 	http.Handle("/", http.FileServer(http.FS(fsys)))
-	http.Handle("/ihui.js/", ihui.NewHTTPHandler(start))
+	ihui.Handle(http.DefaultServeMux, "/", start)
 
 	port := os.Getenv("PORT")
 	if port == "" {
