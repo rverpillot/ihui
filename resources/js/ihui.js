@@ -4,9 +4,6 @@
 var morphdom = require("morphdom")
 var $ = require("cash-dom")
 
-var scripts = $('script')
-var myScript = scripts.last()[0]
-
 function updateHTML(el, html, childrenOnly = false) {
     for (var i = 0; i < el.length; i++) {
         morphdom(el[i], html, {
@@ -25,14 +22,14 @@ global.ihui = {}
 
 function start() {
 
-    var url = myScript.src
-    console.log("Location:", window.location, url)
+    var url = location.href
     if (window.location.protocol == "https:") {
         url = url.replace("https://", "wss://")
     } else {
         url = url.replace("http://", "ws://")
     }
-    var ws = new WebSocket(url + '/ws');
+    console.log("Location:", window.location, url)
+    var ws = new WebSocket(url + 'ihui.js/ws');
 
     function sendEvent(name, elementName, id, target, data, refresh = true) {
         var msg = { name: name, element: elementName, id: id, target: target, data: data, refresh: refresh }
