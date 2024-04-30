@@ -31,6 +31,8 @@ function start() {
     console.log("Location:", window.location, url)
     var ws = new WebSocket(url + 'ihui.js/ws');
 
+    var last_page;
+
     function sendEvent(name, elementName, id, target, data, refresh = true) {
         var msg = { name: name, element: elementName, id: id, target: target, data: data, refresh: refresh }
         // console.log("Send:", msg)
@@ -128,6 +130,11 @@ function start() {
                     document.title = msg.Data.title
                 }
                 if (msg.Data.page) {
+                    if (last_page != msg.Element) {
+                        last_page = msg.Element
+                        window.scrollTo(0, 0)
+                        console.log("scrollTo(0, 0)")
+                    }
                     $(".ihui-page").not("#" + msg.Element).css('display', 'none') // display only the current page
                 }
                 var element = $(msg.Target + " > #" + msg.Element)
