@@ -8,7 +8,7 @@ function updateHTML(el, html, childrenOnly = false) {
     for (var i = 0; i < el.length; i++) {
         morphdom(el[i], html, {
             onBeforeElUpdated: function (fromEl, toEl) {
-                if (toEl.classList.contains('noupdate')) {
+                if (fromEl.isEqualNode(toEl) || toEl.classList.contains('noupdate')) {
                     return false
                 }
                 return true
@@ -21,7 +21,6 @@ function updateHTML(el, html, childrenOnly = false) {
 global.ihui = {}
 
 function start() {
-
     var url = location.href
     if (window.location.protocol == "https:") {
         url = url.replace("https://", "wss://")
@@ -133,7 +132,6 @@ function start() {
                     if (last_page != msg.Element) {
                         last_page = msg.Element
                         window.scrollTo(0, 0)
-                        console.log("scrollTo(0, 0)")
                     }
                     $(".ihui-page").not("#" + msg.Element).css('display', 'none') // display only the current page
                 }

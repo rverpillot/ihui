@@ -77,14 +77,15 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			session.SendEvent(&Event{Name: "init", Id: session.Id()})
 			if err := h.startFunc(session); err != nil {
 				log.Println(err)
-				session.close()
+				session.Close()
 				return
 			}
 		}
 		if err := session.run(false); err != nil {
 			log.Println(err)
+		} else {
+			session.Close()
 		}
-
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 	}

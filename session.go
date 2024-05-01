@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	sessionTimeout = 5 * time.Minute
+	sessionTimeout = 1 * time.Minute
 )
 
 var (
@@ -36,7 +36,7 @@ func purgeOldSessions() {
 	now := time.Now()
 	for _, session := range sessions {
 		if session.date.Add(sessionTimeout).Before(now) {
-			session.close()
+			session.Close()
 		}
 	}
 }
@@ -64,8 +64,10 @@ func newSession() *Session {
 	return session
 }
 
-func (s *Session) close() {
+func (s *Session) Close() {
+	s.page = nil
 	s.elements = nil
+	s.ws = nil
 	delete(sessions, s.id)
 }
 
@@ -231,7 +233,7 @@ func (s *Session) run(modal bool) error {
 				log.Printf("Error: %s", err.Error())
 				s.ShowError(err)
 			}
-			if modal && s.page == nil {
+			if s.page == nil {
 				return nil
 			}
 			if event.Refresh && !s.noRefresh {
