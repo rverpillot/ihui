@@ -196,9 +196,9 @@ func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) 
 }
 
 func (s *Session) run(modal bool) error {
-	for {
-		s.date = time.Now()
+	defer func() { s.date = time.Now() }()
 
+	for {
 		for _, e := range s.elements {
 			if err := e.draw(); err != nil {
 				log.Printf("Error: %s", err.Error())
@@ -215,7 +215,6 @@ func (s *Session) run(modal bool) error {
 			// log.Print("Wait event")
 			event, err := s.RecvEvent()
 			if err != nil {
-				s.date = time.Now()
 				return err
 			}
 			// log.Printf("Event: %+v\n", event)
