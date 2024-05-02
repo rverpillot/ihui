@@ -55,9 +55,6 @@ func (menu *Menu) Render(e *ihui.HTMLElement) error {
 		<div id="content"></div>
 	</section>
 	`
-	if err := e.WriteGoTemplateString(tmpl, menu); err != nil {
-		return err
-	}
 
 	e.Session().AddElement("content", menu.ActiveItem().r, nil)
 
@@ -65,5 +62,6 @@ func (menu *Menu) Render(e *ihui.HTMLElement) error {
 		menu.SetActiveItem(e.Id)
 		return nil
 	})
-	return nil
+
+	return e.WriteGoTemplateString(tmpl, menu)
 }
