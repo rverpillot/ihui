@@ -160,7 +160,28 @@ func (p *HTMLElement) On(eventName string, selector string, action ActionCallbac
 	p.actions = append(p.actions, Action{Name: eventName, Selector: selector, Fct: action})
 }
 
+func (p *HTMLElement) OnClick(selector string, action ActionCallback) {
+	p.On("click", selector, action)
+}
+
+func (p *HTMLElement) OnSubmit(selector string, action ActionCallback) {
+	p.On("submit", selector, action)
+}
+
+func (p *HTMLElement) OnInput(selector string, action ActionCallback) {
+	p.On("input", selector, action)
+}
+
+func (p *HTMLElement) OnCheck(selector string, action ActionCallback) {
+	p.On("check", selector, action)
+}
+
+func (p *HTMLElement) OnForm(selector string, action ActionCallback) {
+	p.On("form", selector, action)
+}
+
 func (p *HTMLElement) sendEvent(name string, data any) error {
+
 	if p.session == nil {
 		return fmt.Errorf("element %s has no session", p.Id)
 	}
