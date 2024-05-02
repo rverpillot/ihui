@@ -113,35 +113,34 @@ func (p *HTMLElement) WriteGoTemplate(fsys fs.FS, filename string, model any) er
 	return p.ExecuteTemplate(template, model)
 }
 
-func (p *HTMLElement) SetHtml(selector string, renderer HTMLRenderer) error {
-
-	doc := p.doc
-	if doc == nil {
-		var err error
-		doc, err = goquery.NewDocumentFromReader(&p.buffer)
-		if err != nil {
-			return err
-		}
-	}
-	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
-		if err := renderer.Render(p); err != nil {
-			return
-		}
-		html, err := p.toHtml()
-		if err != nil {
-			return
-		}
-		s.SetHtml(html)
-	})
-	html, err := doc.Find("body").Html()
-	if err != nil {
-		return err
-	}
-	p.buffer.Reset()
-	p.WriteString(html)
-	p.doc = doc
-	return nil
-}
+// func (p *HTMLElement) SetHtml(selector string, renderer HTMLRenderer) error {
+// 	doc := p.doc
+// 	if doc == nil {
+// 		var err error
+// 		doc, err = goquery.NewDocumentFromReader(&p.buffer)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
+// 	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
+// 		if err := renderer.Render(p); err != nil {
+// 			return
+// 		}
+// 		html, err := p.toHtml()
+// 		if err != nil {
+// 			return
+// 		}
+// 		s.SetHtml(html)
+// 	})
+// 	html, err := doc.Find("body").Html()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	p.buffer.Reset()
+// 	p.WriteString(html)
+// 	p.doc = doc
+// 	return nil
+// }
 
 func (p *HTMLElement) UniqueId(prefix string) string {
 	return p.session.UniqueId(prefix)

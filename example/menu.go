@@ -21,20 +21,20 @@ func NewMenu() *Menu {
 func (menu *Menu) AddItem(name string, r ihui.HTMLRenderer) {
 	menu.Items = append(menu.Items, &Item{Name: name, r: r, IsActive: false})
 	if len(menu.Items) == 1 {
-		menu.SetActiveItem(name)
+		menu.Items[0].IsActive = true
 	}
 }
 
 func (menu *Menu) SetActiveItem(name string) {
 	for _, item := range menu.Items {
-		item.IsActive = item.Name == name
+		item.IsActive = (name == item.Name)
 	}
 }
 
-func (menu *Menu) ActiveItem() ihui.HTMLRenderer {
+func (menu *Menu) ActiveItem() *Item {
 	for _, item := range menu.Items {
 		if item.IsActive {
-			return item.r
+			return item
 		}
 	}
 	return nil
@@ -51,18 +51,17 @@ func (menu *Menu) Render(e *ihui.HTMLElement) error {
 			</ul>
 		</div>
 	</section>
-	<section class="section" data-id="content">
+	<section class="section">
+		<div id="content"></div>
 	</section>
 	`
 	if err := e.WriteGoTemplateString(tmpl, menu); err != nil {
 		return err
 	}
 
-	if err := e.SetHtml("[data-id=content]", menu.ActiveItem()); err != nil {
-		return err
-	}
+	e.Session().AddElement("content", menu.ActiveItem().r, nil)
 
-	e.On("click", "a", func(s *ihui.Session, e ihui.Event) error {
+	e.OnClick("a", func(s *ihui.Session, e ihui.Event) error {
 		menu.SetActiveItem(e.Id)
 		return nil
 	})

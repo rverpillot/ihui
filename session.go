@@ -199,14 +199,14 @@ func (s *Session) run(modal bool) error {
 	defer func() { s.date = time.Now() }()
 
 	for {
-		for _, e := range s.elements {
-			if err := e.draw(); err != nil {
+		if s.page != nil {
+			if err := s.page.draw(); err != nil {
 				log.Printf("Error: %s", err.Error())
 			}
 		}
 
-		if s.page != nil {
-			if err := s.page.draw(); err != nil {
+		for _, e := range s.elements {
+			if err := e.draw(); err != nil {
 				log.Printf("Error: %s", err.Error())
 			}
 		}

@@ -135,7 +135,7 @@ function start() {
                     }
                     $(".ihui-page").not("#" + msg.Element).css('display', 'none') // display only the current page
                 }
-                var element = $(msg.Target + " > #" + msg.Element)
+                var element = $("#" + msg.Element)
                 if (element.length > 0) {
                     updateHTML(element, msg.Data.html)
                     evt = "element-updated"
