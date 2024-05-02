@@ -172,7 +172,12 @@ func (p *HTMLElement) OnInput(selector string, action ActionCallback) {
 	p.On("input", selector, action)
 }
 
+func (p *HTMLElement) OnChange(selector string, action ActionCallback) {
+	p.On("change", selector, action)
+}
+
 func (p *HTMLElement) OnCheck(selector string, action ActionCallback) {
+
 	p.On("check", selector, action)
 }
 
