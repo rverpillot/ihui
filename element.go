@@ -185,7 +185,6 @@ func (p *HTMLElement) OnForm(selector string, action ActionCallback) {
 }
 
 func (p *HTMLElement) sendEvent(name string, data any) error {
-
 	if p.session == nil {
 		return fmt.Errorf("element %s has no session", p.Id)
 	}

@@ -65,10 +65,23 @@ func newSession() *Session {
 }
 
 func (s *Session) Close() {
+	if s.IsClosed() {
+		return
+	}
 	s.page = nil
 	s.elements = nil
 	s.ws = nil
 	delete(sessions, s.id)
+}
+
+func (s *Session) IsClosed() bool {
+	return s.ws == nil
+}
+
+func (s *Session) Quit() error {
+	s.SendEvent(&Event{Name: "quit"})
+	s.Close()
+	return nil
 }
 
 func (s *Session) Id() string {
@@ -198,7 +211,7 @@ func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) 
 func (s *Session) run(modal bool) error {
 	defer func() { s.date = time.Now() }()
 
-	for {
+	for !s.IsClosed() {
 		if s.page != nil {
 			if err := s.page.draw(); err != nil {
 				log.Printf("Error: %s", err.Error())
@@ -232,7 +245,7 @@ func (s *Session) run(modal bool) error {
 				log.Printf("Error: %s", err.Error())
 				s.ShowError(err)
 			}
-			if s.page == nil {
+			if s.IsClosed() {
 				return nil
 			}
 			if event.Refresh && !s.noRefresh {
@@ -240,6 +253,7 @@ func (s *Session) run(modal bool) error {
 			}
 		}
 	}
+	return nil
 }
 
 func (s *Session) PreventRefresh() {

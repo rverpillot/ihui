@@ -27,10 +27,10 @@ function start() {
     } else {
         url = url.replace("http://", "ws://")
     }
-    console.log("Location:", window.location, url)
     var ws = new WebSocket(url + 'ihui.js/ws');
 
     var last_page;
+    var quit = false;
 
     function sendEvent(name, elementName, id, target, data, refresh = true) {
         var msg = { name: name, element: elementName, id: id, target: target, data: data, refresh: refresh }
@@ -171,13 +171,20 @@ function start() {
                     eval(msg.Data)
                 }
                 break
+
+            case "quit":
+                $("body").html("")
+                quit = true
+                ws.close()
+                break
         }
 
     }
 
     ws.onclose = function (event) {
         console.log("Connection closed.")
-        window.location.reload()
+        if (!quit)
+            window.location.reload()
     }
 }
 

@@ -24,6 +24,7 @@ func modal1(e *ihui.HTMLElement) error {
 		<div class="field is-grouped">
 			<button class="button is-primary is-small" data-id="exit">Exit</button>
 			<button class="button is-danger is-small" data-id="error">Error</button>
+			<button class="button is-danger is-small" data-id="quit">Quit Application</button>
 		</div>
 	</section>
 	`)
@@ -33,6 +34,9 @@ func modal1(e *ihui.HTMLElement) error {
 	})
 	e.On("click", "[data-id=error]", func(s *ihui.Session, _ ihui.Event) error {
 		return fmt.Errorf("an error occured")
+	})
+	e.On("click", "[data-id=quit]", func(s *ihui.Session, _ ihui.Event) error {
+		return s.Quit()
 	})
 	e.On("element-created", "", func(s *ihui.Session, _ ihui.Event) error {
 		log.Println("page1 loaded!")
