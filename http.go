@@ -91,11 +91,15 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Handle(mux *http.ServeMux, contextRoot string, startFunc func(*Session) error) {
+func MuxHandle(mux *http.ServeMux, contextRoot string, startFunc func(*Session) error) {
 	contextRoot = strings.TrimSuffix(contextRoot, "/")
 	mux.HandleFunc(contextRoot+"/ihui.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
 		w.Write(js)
 	})
 	mux.Handle(contextRoot+"/ihui.js/ws", newHTTPHandler(startFunc))
+}
+
+func Handle(contextRoot string, startFunc func(*Session) error) {
+	MuxHandle(http.DefaultServeMux, contextRoot, startFunc)
 }
