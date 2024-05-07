@@ -13,16 +13,16 @@ type luaRenderer struct {
 }
 
 func (r *luaRenderer) Render(el *ihui.HTMLElement) error {
-	LL, _ := r.L.NewThread()
 	if r.table != nil {
-		return LL.CallByParam(lua.P{Fn: r.fct}, r.table, luar.New(LL, el))
+		return r.L.CallByParam(lua.P{Fn: r.fct}, r.table, luar.New(r.L, el))
 	} else {
-		return LL.CallByParam(lua.P{Fn: r.fct}, luar.New(LL, el))
+		return r.L.CallByParam(lua.P{Fn: r.fct}, luar.New(r.L, el))
 	}
 }
 
 func newRenderer(L *lua.LState) int {
 	arg := L.Get(1)
+	LL, _ := L.NewThread()
 	switch arg.Type() {
 	case lua.LTTable:
 		table := L.CheckTable(1)
@@ -32,7 +32,7 @@ func newRenderer(L *lua.LState) int {
 			return 0
 		}
 		renderer := &luaRenderer{
-			L:     L,
+			L:     LL,
 			table: table,
 			fct:   fct,
 		}
@@ -41,7 +41,7 @@ func newRenderer(L *lua.LState) int {
 	case lua.LTFunction:
 		fct := L.CheckFunction(1)
 		renderer := &luaRenderer{
-			L:   L,
+			L:   LL,
 			fct: fct,
 		}
 		L.Push(luar.New(L, renderer))

@@ -106,7 +106,7 @@ function start() {
     }
 
     ws.onopen = function (event) {
-        var sessionId = localStorage.getItem("sessionId") || ""
+        var sessionId = sessionStorage.getItem("sessionId") || ""
         ws.send(JSON.stringify({ Name: "connect", Id: sessionId }))
     }
 
@@ -116,7 +116,7 @@ function start() {
 
         switch (msg.Name) {
             case "init":
-                localStorage.setItem("sessionId", msg.Id)
+                sessionStorage.setItem("sessionId", msg.Id)
                 break
 
             case "update":
