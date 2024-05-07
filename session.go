@@ -162,21 +162,21 @@ func (s *Session) remove(element *HTMLElement) error {
 	return nil
 }
 
-func (s *Session) ShowPage(id string, renderer HTMLRenderer, options *Options) error {
+func (s *Session) ShowPage(id string, renderer HTMLRenderer, options ...Options) error {
 	// log.Printf("Show page '%s'", id)
-	if options == nil {
-		options = &Options{}
+	if len(options) == 0 {
+		options = []Options{{}}
 	}
-	options.Page = true
-	return s.add(newHTMLElement(id, renderer, *options))
+	options[0].Page = true
+	return s.add(newHTMLElement(id, renderer, options[0]))
 }
 
-func (s *Session) AddElement(id string, renderer HTMLRenderer, options *Options) error {
-	if options == nil {
-		options = &Options{}
+func (s *Session) AddElement(id string, renderer HTMLRenderer, options ...Options) error {
+	if len(options) == 0 {
+		options = []Options{{}}
 	}
-	options.Page = false
-	return s.add(newHTMLElement(id, renderer, *options))
+	options[0].Page = false
+	return s.add(newHTMLElement(id, renderer, options[0]))
 }
 
 func (s *Session) Show(id string) error {
@@ -193,16 +193,16 @@ func (s *Session) Hide(id string) error {
 	return fmt.Errorf("element '%s' not found", id)
 }
 
-func (s *Session) ShowModal(id string, renderer HTMLRenderer, options *Options) error {
+func (s *Session) ShowModal(id string, renderer HTMLRenderer, options ...Options) error {
 	// log.Printf("Show page '%s'", id)
-	if options == nil {
-		options = &Options{}
+	if len(options) == 0 {
+		options = []Options{{}}
 	}
 	previous_page := s.page
 	defer func() {
 		s.page = previous_page
 	}()
-	if err := s.ShowPage(id, renderer, options); err != nil {
+	if err := s.ShowPage(id, renderer, options...); err != nil {
 		return err
 	}
 	return s.run(true)

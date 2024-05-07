@@ -36,7 +36,7 @@ type HTTPHandler struct {
 func newHTTPHandler(startFunc func(*Session) error) http.Handler {
 	if startFunc == nil {
 		startFunc = func(s *Session) error {
-			s.ShowPage("welcome", HTMLRendererFunc(welcomePage), &Options{Title: "Welcome"})
+			s.ShowPage("welcome", HTMLRendererFunc(welcomePage), Options{Title: "Welcome"})
 			return nil
 		}
 	}

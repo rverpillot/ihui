@@ -62,7 +62,7 @@ func tab2(e *ihui.HTMLElement) error {
 	<button class="button is-link is-small" data-id="modal1">Modal 1</button>
 	`)
 	e.On("click", "[data-id=modal1]", func(s *ihui.Session, _ ihui.Event) error {
-		return s.ShowModal("modal1", ihui.HTMLRendererFunc(modal1), &ihui.Options{Title: "Modal 1"})
+		return s.ShowModal("modal1", ihui.HTMLRendererFunc(modal1), ihui.Options{Title: "Modal 1"})
 	})
 	return nil
 }
@@ -72,7 +72,7 @@ func start(session *ihui.Session) error {
 	menu := NewMenu()
 	menu.AddItem("Tab1", ihui.HTMLRendererFunc(tab1))
 	menu.AddItem("Tab2", ihui.HTMLRendererFunc(tab2))
-	return session.ShowPage("menu", menu, &ihui.Options{Title: "Example"})
+	return session.ShowPage("menu", menu, ihui.Options{Title: "Example"})
 }
 
 func main() {

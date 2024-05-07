@@ -56,7 +56,7 @@ func (menu *Menu) Render(e *ihui.HTMLElement) error {
 	</section>
 	`
 
-	e.Session().AddElement("content", menu.ActiveItem().r, nil)
+	e.Session().AddElement("content", menu.ActiveItem().r)
 
 	e.OnClick("a", func(s *ihui.Session, e ihui.Event) error {
 		menu.SetActiveItem(e.Id)
