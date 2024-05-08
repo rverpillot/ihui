@@ -7,22 +7,32 @@ import (
 )
 
 type luaRenderer struct {
-	L     *lua.LState
 	table lua.LValue
 	fct   lua.LValue
 }
 
 func (r *luaRenderer) Render(el *ihui.HTMLElement) error {
+	L := el.Session().Get("_lua").(*lua.LState)
 	if r.table != nil {
-		return r.L.CallByParam(lua.P{Fn: r.fct}, r.table, luar.New(r.L, el))
+		return L.CallByParam(lua.P{Fn: r.fct}, r.table, luar.New(L, el))
 	} else {
-		return r.L.CallByParam(lua.P{Fn: r.fct}, luar.New(r.L, el))
+		return L.CallByParam(lua.P{Fn: r.fct}, luar.New(L, el))
 	}
+}
+
+func handle(L *lua.LState) int {
+	contextRoot := L.CheckString(1)
+	fct := L.CheckFunction(2)
+	ihui.Handle(contextRoot, func(s *ihui.Session) error {
+		LL, _ := L.NewThread() //TODO: do we need to close this thread?
+		s.Set("_lua", LL)
+		return L.CallByParam(lua.P{Fn: fct}, luar.New(LL, s))
+	})
+	return 0
 }
 
 func newRenderer(L *lua.LState) int {
 	arg := L.Get(1)
-	LL, _ := L.NewThread()
 	switch arg.Type() {
 	case lua.LTTable:
 		table := L.CheckTable(1)
@@ -32,7 +42,6 @@ func newRenderer(L *lua.LState) int {
 			return 0
 		}
 		renderer := &luaRenderer{
-			L:     LL,
 			table: table,
 			fct:   fct,
 		}
@@ -41,7 +50,6 @@ func newRenderer(L *lua.LState) int {
 	case lua.LTFunction:
 		fct := L.CheckFunction(1)
 		renderer := &luaRenderer{
-			L:   LL,
 			fct: fct,
 		}
 		L.Push(luar.New(L, renderer))
@@ -55,7 +63,7 @@ func newRenderer(L *lua.LState) int {
 
 func Loader(L *lua.LState) int {
 	table := L.NewTable()
-	table.RawSetString("handle", luar.New(L, ihui.Handle))
+	table.RawSetString("handle", L.NewFunction(handle))
 	table.RawSetString("to_renderer", L.NewFunction(newRenderer))
 	L.Push(table)
 	return 1
