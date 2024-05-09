@@ -245,7 +245,8 @@ func (s *Session) run(modal bool) error {
 				log.Printf("Error: %s", err.Error())
 				s.ShowError(err)
 			}
-			if s.IsClosed() {
+
+			if s.IsClosed() || s.page == nil {
 				return nil
 			}
 			if event.Refresh && !s.noRefresh {
