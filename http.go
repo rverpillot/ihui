@@ -47,7 +47,7 @@ func newHTTPHandler(startFunc func(*Session) error) http.Handler {
 }
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Method, r.URL.Path)
+	// log.Println(r.Method, r.URL.Path)
 
 	if r.Header.Get("Upgrade") == "websocket" {
 		var upgrader = websocket.Upgrader{
