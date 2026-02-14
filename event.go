@@ -6,7 +6,7 @@ type Event struct {
 	Element string
 	Target  string
 	Refresh bool
-	Data    interface{}
+	Data    any
 }
 
 func (e *Event) Value() string {

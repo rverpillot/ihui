@@ -1,6 +1,6 @@
 package ihui
 
-// Paginator is a paginator. 
+// Paginator is a paginator.
 // It is used to split a list of items into pages.
 
 import "math"
@@ -44,7 +44,7 @@ func (p *Paginator) SetTotal(size int) {
 func (p *Paginator) Pages() int {
 	nb := int(math.Ceil(float64(p.Size) / float64(p.PageSize)))
 	p.Fragments = nil
-	for i := 0; i < nb; i++ {
+	for i := range nb {
 		p.Fragments = append(p.Fragments, &Fragment{pagination: p, Number: i + 1, Index: p.PageSize * i})
 	}
 	return nb
